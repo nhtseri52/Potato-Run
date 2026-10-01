@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Potato Run — Admin</title>
+<style>
+  :root{ --bg:#141a34; --panel:#1f2750; --line:#3a468c; --cream:#eef0ff; --gold:#ffc23d; --red:#ff5b48; --green:#4fd672; }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--cream); font-family:system-ui,sans-serif; padding:20px;}
+  h1{font-size:18px; color:var(--gold);}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:16px;}
+  input,button,select{font-family:inherit; font-size:13px; padding:8px 10px; border-radius:5px; border:1px solid var(--line); background:#10163096; color:var(--cream);}
+  button{cursor:pointer; background:var(--gold); color:#241a10; font-weight:700; border:none;}
+  button.secondary{background:#2b3878; color:var(--cream);}
+  button.danger{background:var(--red); color:#fff;}
+  table{width:100%; border-collapse:collapse; font-size:12px;}
+  th,td{text-align:left; padding:8px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--gold);}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;}
+  .tag{padding:2px 7px; border-radius:10px; font-size:11px;}
+  .tag.banned{background:var(--red); color:#fff;}
+  .tag.ok{background:var(--green); color:#0e1c0e;}
+  #loginBox{max-width:360px; margin:60px auto;}
+  .hidden{display:none !important;}
+  small{color:#a6b0e0;}
+  .skin-checks{display:flex; flex-wrap:wrap; gap:4px; max-width:220px;}
+  .skin-checks label{font-size:10px; display:flex; align-items:center; gap:3px; background:#10163096; padding:2px 6px; border-radius:4px;}
+  .expand-row td{background:#10163060;}
+  .editBtn{background:#2b3878; color:var(--cream);}
+</style>
+</head>
+<body>
+
+<div id="loginBox" class="card">
+  <h1>🔒 Potato Run — Admin Login</h1>
+  <div class="row" style="flex-direction:column; align-items:stretch;">
+    <input type="email" id="adminEmail" placeholder="Admin Gmail">
+    <input type="password" id="adminPass" placeholder="Password">
+    <button id="adminLoginBtn">Đăng nhập Admin</button>
+    <div id="adminErr" style="color:var(--red); font-size:12px;"></div>
+  </div>
+</div>
+
+<div id="panel" class="hidden">
+  <h1>🥔 Potato Run — Admin Panel</h1>
+  <div class="card">
+    <div class="row">
+      <input type="text" id="searchBox" placeholder="Tìm theo tên hoặc gmail...">
+      <button id="refreshBtn" class="secondary">Tải lại danh sách</button>
+      <button id="logoutAdminBtn" class="secondary">Đăng xuất</button>
+      <small>Đăng nhập: <span id="whoAmI"></span> · Tổng: <span id="totalCount">0</span> người chơi</small>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Tên</th><th>Gmail</th><th>Coin</th><th>Điểm cao</th><th>Skin đang dùng</th><th>Trạng thái</th><th></th></tr></thead>
+      <tbody id="userRows"><tr><td colspan="7">Đang tải...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+/* Use the SAME config as index.html */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+const ADMIN_EMAIL = "nhtseri52@gmail.com"; // <-- must match firestore.rules
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const dbase = getFirestore(app);
+
+const ALL_SKINS = ['classic','sunny','beachy','chef','panda','ninja','pirate','wizard','royal','zombie','robot','astro','dragon','golden'];
+let allUsers = [];
+function $(id){ return document.getElementById(id); }
+
+document.getElementById('adminLoginBtn').addEventListener('click', async () => {
+  const email = $('adminEmail').value.trim(), pass = $('adminPass').value;
+  $('adminErr').textContent = '';
+  if(email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()){ $('adminErr').textContent = 'Tài khoản này không có quyền admin.'; return; }
+  try{ await signInWithEmailAndPassword(auth, email, pass); }
+  catch(e){ $('adminErr').textContent = e.message; }
+});
+document.getElementById('logoutAdminBtn').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, (user) => {
+  if(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()){
+    $('loginBox').classList.add('hidden'); $('panel').classList.remove('hidden');
+    $('whoAmI').textContent = user.email;
+    loadUsers();
+  } else {
+    $('loginBox').classList.remove('hidden'); $('panel').classList.add('hidden');
+    if(user) $('adminErr').textContent = 'Tài khoản này không có quyền admin.';
+  }
+});
+
+async function loadUsers(){
+  $('userRows').innerHTML = '<tr><td colspan="7">Đang tải...</td></tr>';
+  const snap = await getDocs(collection(dbase, 'users'));
+  allUsers = [];
+  snap.forEach(d => allUsers.push({ uid: d.id, ...d.data() }));
+  $('totalCount').textContent = allUsers.length;
+  renderRows(allUsers);
+}
+document.getElementById('refreshBtn').addEventListener('click', loadUsers);
+document.getElementById('searchBox').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  renderRows(allUsers.filter(u => (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q)));
+});
+
+function isBannedNow(u){ return u.banned && (!u.banUntil || u.banUntil > Date.now()); }
+
+function renderRows(list){
+  const body = $('userRows');
+  if(list.length === 0){ body.innerHTML = '<tr><td colspan="7">Không có người dùng.</td></tr>'; return; }
+  body.innerHTML = '';
+  list.forEach(u => {
+    const banned = isBannedNow(u);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${u.name||'-'}</td>
+      <td>${u.email||'-'}</td>
+      <td>${u.coins ?? 0}</td>
+      <td>${u.highScore ?? 0}</td>
+      <td>${u.equipped||'classic'}</td>
+      <td><span class="tag ${banned?'banned':'ok'}">${banned?'BANNED':'OK'}</span>${u.banUntil?`<br><small>đến ${new Date(u.banUntil).toLocaleDateString()}</small>`:(u.banned?'<br><small>vĩnh viễn</small>':'')}</td>
+      <td><button class="editBtn">Sửa</button></td>
+    `;
+    tr.querySelector('.editBtn').addEventListener('click', () => toggleEdit(tr, u));
+    body.appendChild(tr);
+  });
+}
+
+function toggleEdit(tr, u){
+  const existing = tr.nextElementSibling;
+  if(existing && existing.classList.contains('expand-row')){ existing.remove(); return; }
+  const exp = document.createElement('tr');
+  exp.className = 'expand-row';
+  const skinChecks = ALL_SKINS.map(s => {
+    const checked = (u.owned||[]).includes(s) ? 'checked' : '';
+    return `<label><input type="checkbox" value="${s}" ${checked}> ${s}</label>`;
+  }).join('');
+  exp.innerHTML = `<td colspan="7">
+    <div class="row"><label>Tên: <input type="text" class="f-name" value="${u.name||''}" style="width:160px;"></label></div>
+    <div class="row"><label>Coin: <input type="number" class="f-coins" value="${u.coins ?? 0}" style="width:120px;"></label>
+      <label>Điểm cao: <input type="number" class="f-high" value="${u.highScore ?? 0}" style="width:120px;"></label>
+      <label>Skin đang dùng: <select class="f-equipped">${ALL_SKINS.map(s=>`<option value="${s}" ${u.equipped===s?'selected':''}>${s}</option>`).join('')}</select></label>
+    </div>
+    <div class="row">
+      <span>Tăng/giảm coin nhanh:</span>
+      <input type="number" class="f-coindelta" placeholder="vd: 100 hoặc -100" style="width:150px;">
+      <button class="adjustCoinBtn secondary">Áp dụng (+/-)</button>
+      <small>Cộng hoặc trừ ngay vào số coin hiện tại, không ảnh hưởng các ô khác.</small>
+    </div>
+    <div class="row"><span>Skin sở hữu:</span><div class="skin-checks">${skinChecks}</div></div>
+    <div class="row">
+      <input type="number" class="f-bandays" placeholder="Số ngày ban (để trống = vĩnh viễn)" style="width:220px;">
+      <input type="text" class="f-banreason" placeholder="Lý do ban" style="width:200px;">
+      <button class="banBtn danger">Ban</button>
+      <button class="unbanBtn secondary">Gỡ ban</button>
+    </div>
+    <div class="row">
+      <button class="saveBtn">💾 Lưu tất cả thay đổi</button>
+      <button class="deleteBtn danger">Xoá tài khoản (dữ liệu game)</button>
+    </div>
+  </td>`;
+  tr.after(exp);
+
+  exp.querySelector('.adjustCoinBtn').addEventListener('click', async () => {
+    var delta = parseInt(exp.querySelector('.f-coindelta').value || '0', 10);
+    if(!delta){ return; }
+    await updateDoc(doc(dbase,'users',u.uid), { coins: increment(delta) });
+    loadUsers();
+  });
+  exp.querySelector('.saveBtn').addEventListener('click', async () => {
+    const owned = Array.from(exp.querySelectorAll('.skin-checks input:checked')).map(i => i.value);
+    if(owned.length === 0) owned.push('classic');
+    const equipped = exp.querySelector('.f-equipped').value;
+    const patch = {
+      name: exp.querySelector('.f-name').value.trim(),
+      coins: parseInt(exp.querySelector('.f-coins').value || '0', 10),
+      highScore: parseInt(exp.querySelector('.f-high').value || '0', 10),
+      owned: owned,
+      equipped: owned.includes(equipped) ? equipped : 'classic'
+    };
+    await updateDoc(doc(dbase,'users',u.uid), patch);
+    loadUsers();
+  });
+  exp.querySelector('.banBtn').addEventListener('click', async () => {
+    const days = parseInt(exp.querySelector('.f-bandays').value || '0', 10);
+    const reason = exp.querySelector('.f-banreason').value.trim();
+    await updateDoc(doc(dbase,'users',u.uid), { banned:true, banUntil: days>0 ? Date.now()+days*86400000 : null, banReason: reason });
+    loadUsers();
+  });
+  exp.querySelector('.unbanBtn').addEventListener('click', async () => {
+    await updateDoc(doc(dbase,'users',u.uid), { banned:false, banUntil:null, banReason:'' });
+    loadUsers();
+  });
+  exp.querySelector('.deleteBtn').addEventListener('click', async () => {
+    if(!confirm('Xoá toàn bộ dữ liệu game của người này? (không xoá được tài khoản đăng nhập Firebase Auth, chỉ xoá dữ liệu Firestore)')) return;
+    await deleteDoc(doc(dbase,'users',u.uid));
+    loadUsers();
+  });
+}
+</script>
+</body>
+</html>
