@@ -238,7 +238,7 @@
         </div>
         <div id="hearts"></div>
         <div id="buffHud"></div>
-        <div id="botHud" class="hidden"><div class="pill" id="botScoreLbl" style="color:var(--red);">🤖 0</div></div>
+        <div id="botHud" class="hidden"><div class="pill" id="botScoreLbl" style="color:var(--red);">👤 0</div></div>
       </div>
       <div id="pauseOverlay" class="overlay hidden">
         <div class="card">
@@ -384,7 +384,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, increment,
-  collection, query, orderBy, limit, getDocs
+  collection, query, orderBy, limit, getDocs, onSnapshot, runTransaction, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 /* ======================================================================
@@ -403,7 +403,7 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const dbase = getFirestore(fbApp);
-window.__PR_FB = { auth, dbase, doc, getDoc, setDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs,
+window.__PR_FB = { auth, dbase, doc, getDoc, setDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs, onSnapshot, runTransaction, deleteDoc,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail,
   updateProfile, sendEmailVerification, reload };
 window.dispatchEvent(new Event('pr-firebase-ready'));
@@ -973,7 +973,7 @@ function newState(mode){
     shieldActive:false, shieldTimer:0, x2Active:false, x2Timer:0, reviveCount:0,
     player:{ x:70, y:0, vy:0, w:44, h:44, onGround:true, jumps:0, rot:0, runPhase:0 },
     obstacles:[], coins:[], mysteries:[], particles:[],
-    spawnTimer:0, nextSpawn:60, coinTimer:0, nextCoin:70, mysteryTimer:0, nextMystery:520, bot:null };
+    spawnTimer:0, nextSpawn:60, coinTimer:0, nextCoin:70, mysteryTimer:0, nextMystery:520, bot:null, matchId:null, opponentUid:null, opponentName:null, opponentScore:0, opponentAlive:true, pvpUnsub:null, pvpQueueUnsub:null, lastPvpSync:0, pvpFinished:false };
 }
 var BOT_NAMES=['SpudMaster','NoobPotato','Player_882','TurboTater','ChipKing','MashMaster','Player_417','ShadowSpud','LuckyFry','ProPotato99'];
 function makeBot(){
@@ -983,12 +983,95 @@ function makeBot(){
   return { name:name, score:0, alive:true, crashAt:crashAt, skill:skill };
 }
 
-function startGame(mode){
+var pvpMatchUnsub=null;
+function pvpReady(){ return !!(currentUser && FB && FB.onSnapshot && FB.runTransaction); }
+function pvpQueueRef(uid){ return FB.doc(FB.dbase,'soloQueue',uid); }
+function pvpMatchRef(id){ return FB.doc(FB.dbase,'soloMatches',id); }
+function cleanupPvp(){
+  if(pvpMatchUnsub){ try{pvpMatchUnsub();}catch(e){} pvpMatchUnsub=null; }
+  if(state && state.pvpQueueUnsub){ try{state.pvpQueueUnsub();}catch(e){} state.pvpQueueUnsub=null; }
+}
+async function joinPvpQueue(){
+  if(!pvpReady()) throw new Error('Firebase realtime matchmaking is not configured.');
+  var uid=currentUser.uid, qref=pvpQueueRef(uid);
+  await FB.setDoc(qref,{uid:uid,name:currentUser.displayName||currentUser.email||'Player',createdAt:Date.now(),matchId:null},{merge:true});
+  return qref;
+}
+async function tryFindPvpMatch(){
+  if(!pvpReady()||!currentUser) return null;
+  var uid=currentUser.uid;
+  var snap=await FB.getDocs(FB.collection(FB.dbase,'soloQueue'));
+  var candidates=[];
+  snap.forEach(function(d){ var x=d.data()||{}; if(d.id!==uid && !x.matchId) candidates.push({id:d.id,data:x}); });
+  candidates.sort(function(a,b){ return (a.data.createdAt||0)-(b.data.createdAt||0); });
+  if(!candidates.length) return null;
+  var c=candidates[0], myRef=pvpQueueRef(uid), otherRef=pvpQueueRef(c.id);
+  var matchId=null;
+  await FB.runTransaction(FB.dbase,async function(tx){
+    var mine=await tx.get(myRef), other=await tx.get(otherRef);
+    var md=mine.exists()?mine.data():{}, od=other.exists()?other.data():{};
+    if((md.matchId)||(od.matchId)) return;
+    matchId=uid+'_'+c.id+'_'+Date.now();
+    var mref=pvpMatchRef(matchId);
+    tx.set(mref,{status:'playing',players:[uid,c.id],names:{[uid]:md.name||'Player',[c.id]:od.name||'Player'},scores:{[uid]:0,[c.id]:0},alive:{[uid]:true,[c.id]:true},finished:{[uid]:false,[c.id]:false},createdAt:Date.now()});
+    tx.set(myRef,{matchId:matchId},{merge:true});
+    tx.set(otherRef,{matchId:matchId},{merge:true});
+  });
+  return matchId;
+}
+function watchPvpQueue(qref){
+  if(state && state.pvpQueueUnsub) try{state.pvpQueueUnsub();}catch(e){}
+  state.pvpQueueUnsub=FB.onSnapshot(qref,function(docSnap){
+    var d=docSnap.data()||{};
+    if(d.matchId){
+      startGame('solo', d.matchId);
+    }
+  });
+}
+function setupPvpMatchSync(){
+  if(!state||!state.matchId) return;
+  if(pvpMatchUnsub) try{pvpMatchUnsub();}catch(e){}
+  pvpMatchUnsub=FB.onSnapshot(pvpMatchRef(state.matchId),function(snap){
+    if(!snap.exists()||!state) return;
+    var d=snap.data()||{}, uid=currentUser&&currentUser.uid;
+    var scores=d.scores||{}, alive=d.alive||{}, names=d.names||{}, players=d.players||[];
+    var opp=players.find(function(x){return x!==uid;});
+    state.opponentUid=opp||null; state.opponentName=opp?(names[opp]||'Player'):'Đối thủ';
+    state.opponentScore=opp?Number(scores[opp]||0):0; state.opponentAlive=opp?alive[opp]!==false:true;
+    el('botScoreLbl').textContent='👤 '+state.opponentName+': '+Math.floor(state.opponentScore);
+    if(d.finished && d.finished[uid] && d.finished[opp]) finalizePvpResult();
+  });
+}
+async function publishPvpState(finished){
+  if(!state||!state.matchId||!currentUser||!FB) return;
+  var uid=currentUser.uid;
+  try{ await FB.setDoc(pvpMatchRef(state.matchId),{scores:{[uid]:Math.floor(state.score)},alive:{[uid]:!finished},finished:{[uid]:!!finished}},{merge:true}); }catch(e){}
+}
+async function finalizePvpResult(){
+  if(!state||state.pvpFinished||!state.matchId) return;
+  state.pvpFinished=true;
+  var win=state.score>=state.opponentScore;
+  var reward=win?50:10;
+  store.coins+=reward; state.runCoins+=reward; saveLocal(); refreshCoinBadges();
+  if(currentUser) await pushUserDoc();
+  el('soloResultWrap').classList.remove('hidden');
+  el('botNameLbl').textContent=state.opponentName||'Player';
+  el('botFinalScore').textContent=Math.floor(state.opponentScore||0);
+  el('finalCoins').textContent=state.runCoins;
+  el('overTitle').textContent=win?t('win'):t('lose');
+  el('reviveBtn').classList.add('hidden');
+  el('overOverlay').classList.remove('hidden');
+}
+function startGame(mode, matchId){
   showScreen('game'); resize();
-  state = newState(mode); state.player.y = GROUND-state.player.h;
+  state = newState(mode);
+  if(mode==='solo' && matchId) state.matchId=matchId; state.player.y = GROUND-state.player.h;
   el('overOverlay').classList.add('hidden'); el('pauseOverlay').classList.add('hidden');
   el('soloResultWrap').classList.add('hidden'); el('botHud').classList.toggle('hidden', mode!=='solo');
-  if(mode==='solo'){ state.bot=makeBot(); el('botScoreLbl').textContent='🤖 '+state.bot.name+': 0'; }
+  if(mode==='solo'){
+    el('botScoreLbl').textContent='👤 Đang kết nối...';
+    setupPvpMatchSync();
+  }
   state.running=true; state.paused=false; state.over=false; el('scoreLbl').textContent='0';
   renderHearts(); renderBuffs();
   if(mode==='solo') playTrack(SOLO_TRACK.bpm, SOLO_TRACK.m, SOLO_TRACK.b, SOLO_TRACK.d);
@@ -1138,10 +1221,12 @@ function update(){
   var ms=Math.floor(state.t/60/10);
   if(ms>state.lastMilestone){ state.lastMilestone=ms; state.score+=15; sMilestone(); }
 
-  if(state.mode==='solo' && state.bot && state.bot.alive){
-    state.bot.score += 0.065*state.bot.skill + Math.random()*0.3;
-    if(state.bot.score>=state.bot.crashAt) state.bot.alive=false;
-    el('botScoreLbl').textContent='🤖 '+state.bot.name+': '+Math.floor(state.bot.score);
+  if(state.mode==='solo' && state.matchId){
+    if(state.t - state.lastPvpSync >= 30){
+      state.lastPvpSync = state.t;
+      publishPvpState(false);
+    }
+    el('botScoreLbl').textContent='👤 '+(state.opponentName||'Đối thủ')+': '+Math.floor(state.opponentScore||0);
   }
   for(var pi=state.particles.length-1;pi>=0;pi--){
     var pt=state.particles[pi]; pt.y-=1.3; pt.life--; pt.x-=state.speed*.4;
@@ -1357,20 +1442,21 @@ async function endRun(){
     missionProgress.plays = (missionProgress.plays||0)+1;
     await saveMissions(); await pushUserDoc(); await submitScoreToLeaderboard(state.score);
   }
-  if(state.mode==='solo' && state.bot){
+  if(state.mode==='solo' && state.matchId){
+    await publishPvpState(true);
+    el('overTitle').textContent='ĐANG CHỜ ĐỐI THỦ...';
     el('soloResultWrap').classList.remove('hidden');
-    el('botNameLbl').textContent=state.bot.name; el('botFinalScore').textContent=Math.floor(state.bot.score);
-    var win = state.score>=state.bot.score;
-    title = win?t('win'):t('lose');
-    if(win) sWin(); else sLose2();
+    el('botNameLbl').textContent=state.opponentName||'Player';
+    el('botFinalScore').textContent=Math.floor(state.opponentScore||0);
+    el('reviveBtn').classList.add('hidden');
+    el('overOverlay').classList.remove('hidden');
+    if(state.opponentUid && state.opponentScore!==undefined && state.opponentAlive===false) await finalizePvpResult();
+    return;
   }
   el('overTitle').textContent=title;
   var reviveCost = REVIVE_BASE*Math.pow(5,state.reviveCount);
   var reviveBtn = el('reviveBtn');
   if(state.mode==='solo'){
-    var soloReward = state.score>=state.bot.score ? 50 : 10;
-    store.coins += soloReward; state.runCoins += soloReward; saveLocal(); refreshCoinBadges();
-    if(currentUser) await pushUserDoc();
     reviveBtn.classList.add('hidden');
   }else if(state.reviveCount>=REVIVE_MAX){ reviveBtn.classList.add('hidden'); }
   else{
@@ -1401,20 +1487,31 @@ el('reviveBtn').addEventListener('click', function(){
 el('playBtn').addEventListener('click', function(){ startGame('normal'); });
 var soloMatchTimer=null, soloDotsTimer=null;
 function startSoloMatchmaking(){
+  if(!pvpReady()){ alert('Firebase chưa được cấu hình cho đấu online. Hãy điền Firebase config và mở quyền Firestore.'); return; }
   showScreen('matchmaking');
-  var remaining=20, dots=0;
+  var remaining=20,dots=0, qref=null, cancelled=false;
   el('mmDots').textContent='20s';
   if(soloDotsTimer) clearInterval(soloDotsTimer); if(soloMatchTimer) clearTimeout(soloMatchTimer);
-  soloDotsTimer=setInterval(function(){
-    remaining=Math.max(0,remaining-1); dots=(dots+1)%4;
-    el('mmDots').textContent=remaining+'s '+'.'.repeat(dots||1);
-  },1000);
+  (async function(){
+    try{
+      qref=await joinPvpQueue();
+      if(cancelled) return;
+      watchPvpQueue(qref);
+      var immediate=await tryFindPvpMatch();
+      if(immediate){ showScreen('matchmaking'); }
+    }catch(e){ alert('Không thể vào phòng đấu: '+(e.message||e)); showScreen('lobby'); }
+  })();
+  soloDotsTimer=setInterval(function(){ remaining=Math.max(0,remaining-1); dots=(dots+1)%4; el('mmDots').textContent=remaining+'s '+'.'.repeat(dots||1); },1000);
   soloMatchTimer=setTimeout(function(){
     clearInterval(soloDotsTimer); soloDotsTimer=null; soloMatchTimer=null;
-    startGame('solo');
+    if(!qref) return;
+    // Keep waiting for a real player after the 20s display; never create a bot.
+    el('mmDots').textContent='Đang chờ người chơi thật...';
   },20000);
   el('cancelMM').onclick=function(){
-    clearTimeout(soloMatchTimer); clearInterval(soloDotsTimer); soloMatchTimer=null; soloDotsTimer=null; showScreen('lobby');
+    cancelled=true; clearTimeout(soloMatchTimer); clearInterval(soloDotsTimer); soloMatchTimer=null; soloDotsTimer=null;
+    if(qref) FB.deleteDoc(qref).catch(function(){});
+    showScreen('lobby');
   };
 }
 el('soloBtn').addEventListener('click', function(){
@@ -1434,12 +1531,12 @@ el('resumeBtn').addEventListener('click', function(){
   else playMusicPool(GAME_TRACKS);
 });
 el('exitBtn').addEventListener('click', function(){
-  state.running=false; state.paused=false; saveLocal(); if(currentUser) pushUserDoc();
+  state.running=false; state.paused=false; cleanupPvp(); saveLocal(); if(currentUser) pushUserDoc();
   el('pauseOverlay').classList.add('hidden'); refreshCoinBadges(); updateSoloBtnState(); showScreen('lobby'); playMusicPool(LOBBY_TRACKS);
 });
 el('retryBtn').addEventListener('click', function(){ if(state.mode==='solo') startSoloMatchmaking(); else startGame('normal'); });
 el('menuBtn').addEventListener('click', function(){
-  state.running=false; saveLocal(); if(currentUser) pushUserDoc();
+  state.running=false; cleanupPvp(); saveLocal(); if(currentUser) pushUserDoc();
   refreshCoinBadges(); updateSoloBtnState(); showScreen('lobby'); playMusicPool(LOBBY_TRACKS);
 });
 
