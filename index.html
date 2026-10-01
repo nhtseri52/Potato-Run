@@ -21,7 +21,7 @@
     --body:'Nunito', sans-serif;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0; background:var(--bg); color:var(--cream); font-family:var(--body);}
+  html,body{margin:0; background:var(--bg); color:var(--cream); font-family:var(--body); user-select:none;}
   a{color:var(--gold);}
   button{font-family:var(--body);}
 
@@ -63,7 +63,7 @@
   .top-badges{position:absolute; top:8px; left:8px; right:8px; display:flex; justify-content:space-between; z-index:3; gap:6px; flex-wrap:wrap;}
   .badge{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:6px 9px;
     font-family:var(--pixel); font-size:9px; display:flex; align-items:center; gap:5px;}
-  .coin-ico{width:10px; height:10px; border-radius:50%; background:var(--gold); border:1px solid var(--gold-dk);}
+  .coin-ico{width:10px; height:10px; border-radius:50%; background:var(--gold); border:1px solid var(--gold-dk); display:inline-block;}
   .icon-btn{background:var(--panel); border:1px solid var(--line); border-radius:6px; width:30px; height:30px;
     display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px;}
   .icon-row{display:flex; gap:6px;}
@@ -89,7 +89,7 @@
   #hearts{position:absolute; top:8px; left:50%; transform:translateX(-50%); z-index:4; display:flex; gap:3px;}
   #hearts span{font-size:14px;}
   #buffHud{position:absolute; top:36px; left:0; right:0; display:flex; justify-content:center; gap:8px; z-index:4;}
-  #buffHud .pill{font-size:8px;}
+  #buffHud .pill{font-size:8px; background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:3px 6px;}
   #botHud{position:absolute; top:64px; left:8px; z-index:4;}
 
   .overlay{position:absolute; inset:0; background:rgba(10,12,30,.85); display:flex; align-items:center; justify-content:center;
@@ -375,7 +375,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 /* ======================================================================
-   ⚠️ PASTE YOUR OWN FIREBASE CONFIG HERE (Firebase Console → Project settings)
+   CẤU HÌNH FIREBASE ĐÃ DÁN ĐÚNG THEO BƯỚC 4
 ====================================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyAuHv472KR6ZP57RTK-d5z-aH0rK7lbDvQ",
@@ -386,6 +386,7 @@ const firebaseConfig = {
   appId: "1:950698200630:web:a7dbc26101dfb814d5d297",
   measurementId: "G-FRBLTLJRTZ"
 };
+
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
 const dbase = getFirestore(fbApp);
@@ -399,8 +400,10 @@ window.dispatchEvent(new Event('pr-firebase-ready'));
 (function(){
 "use strict";
 
+var ADMIN_EMAIL = "nhtseri52@gmail.com";
+
 /* ============================================================
-   I18N  (default: English)
+   I18N  (default: English / Vietnamese)
 ============================================================ */
 var LANG = localStorage.getItem('pr_lang') || 'en';
 var I18N = {
@@ -411,26 +414,26 @@ var I18N = {
     leaderboardTop:'TOP 100 — RESETS WEEKLY', finding:'FINDING OPPONENT...', cancel:'CANCEL',
     paused:'PAUSED', resume:'RESUME', quit:'QUIT', gameOver:'GAME OVER',
     score:'Score', coinsGained:'Coins gained', retry:'RETRY', menu:'MENU', revive:'REVIVE (100 🪙)',
-    artAbout:'ABOUT THE GAME', artAboutTxt:'Potato Run is a free endless-runner game playable directly in your browser. Guide a running potato through spikes, birds and tall walls, break open mystery blocks for random rewards, collect coins scattered across the track, and unlock unique potato skins. Reach 1,000 points to unlock Potato Solo, a versus mode against another player or a bot.',
-    artHow:'HOW TO PLAY', artHow1:'PC: press <span class="kbd">SPACE</span> or click to jump; press again in mid-air for a double jump — required to clear tall walls.',
-    artHow2:'Mobile: tap once to jump, tap twice quickly for a double jump.',
-    artHow3:"Score increases automatically every second while you run — obstacles don't give bonus score, only coins do.",
-    artHow4:'Mystery blocks give random rewards: bonus coins, an extra heart, a shield that clears nearby hazards, a 2x score boost, or (rarely) a heart loss — so approach them carefully!',
-    artAccount:'ACCOUNT & PROGRESS', artAccountTxt:'Playing without an account still saves your coins locally. Log in anytime and your existing coins and high score are merged into your account automatically. An account is required for Leaderboard, Daily Missions and Potato Solo.',
-    aboutUs:'About Us', contactUs:'Contact Us', privacy:'Privacy Policy', aboutTxt:'Potato Run is a small independent game project built by fans of classic endless runners, playable free in any browser.',
-    contactTxt:'Questions, bug reports or feedback:', privacyTxt:'We store your display name and email (for login) and gameplay data (coins, scores, skins). Passwords are handled entirely by Firebase Authentication. Google AdSense may use cookies to personalize ads.',
+    artAbout:'ABOUT THE GAME', artAboutTxt:'Potato Run is a free endless-runner game playable directly in your browser.',
+    artHow:'HOW TO PLAY', artHow1:'PC: press SPACE or click to jump; double jump for tall walls.',
+    artHow2:'Mobile: tap once to jump, tap twice quickly for double jump.',
+    artHow3:'Score increases automatically over time.', artHow4:'Mystery blocks give random bonuses.',
+    artAccount:'ACCOUNT & PROGRESS', artAccountTxt:'Progress merges automatically when logging in.',
+    aboutUs:'About Us', contactUs:'Contact Us', privacy:'Privacy Policy', aboutTxt:'Potato Run is a free browser endless runner game.',
+    contactTxt:'Questions, bug reports or feedback:', privacyTxt:'We store display name, email, and gameplay progress securely.',
     login:'LOG IN', register:'REGISTER', forgot:'Forgot password?', emailLbl:'Gmail / Email', passLbl:'Password',
-    nameLbl:'Display Name (changeable)', confirmLbl:'Confirm Password',
-    sendReset:'SEND RESET LINK', profile:'Profile', guestTxt:"You're playing as guest. Log in to save progress online and unlock Leaderboard & Potato Solo.",
-    loginRegister:'Log In / Register', coins:'Coins', highScore:'High score', saveName:'SAVE NAME', logout:'LOG OUT',
-    needLogin:'Log in to use this online feature!', needScore:'Reach 1,000 points in normal mode to unlock Potato Solo! (Current best: ', banned:'Your account has been suspended.', banReason:'Reason: ', banUntil:'Until: ',
+    nameLbl:'Display Name', confirmLbl:'Confirm Password', sendReset:'SEND RESET LINK', profile:'Profile',
+    guestTxt:'You are playing as guest. Log in to save progress online.', loginRegister:'Log In / Register',
+    coins:'Coins', highScore:'High score', saveName:'SAVE NAME', logout:'LOG OUT',
+    needLogin:'Log in to use this online feature!', needScore:'Reach 1,000 points to unlock Potato Solo! (Best: ',
+    banned:'Your account has been suspended.', banReason:'Reason: ', banUntil:'Until: ',
     resetsAt:'Next reset at 00:00 (Vietnam time) — ', claim:'CLAIM', claimed:'CLAIMED', noMissions:'Loading missions...',
-    win:'🏆 YOU WIN!', lose:'YOU LOSE', passMismatch:'Passwords do not match', fillAll:'Please fill all fields', resetSent:'Password reset email sent!',
-    artB1:'🥔 Dodge spikes, birds and tall walls — double jump when you need extra height.', artB2:'🪙 Collect coins and mystery blocks scattered along the track to unlock 14 potato skins.', artB3:'🏆 Reach 1,000 points to unlock Potato Solo and the weekly Leaderboard.',
-    artMore:'MORE DETAILS', artLess:'SHOW LESS',
-    regVerifyNote:"We'll send a verification link to your email — you must verify before your first login.",
+    win:'🏆 YOU WIN!', lose:'YOU LOSE', passMismatch:'Passwords do not match', fillAll:'Please fill all fields',
+    resetSent:'Password reset email sent!', artB1:'🥔 Dodge spikes, birds and tall walls.',
+    artB2:'🪙 Collect coins and mystery blocks for 14 potato skins.', artB3:'🏆 Reach 1,000 points to unlock Potato Solo.',
+    artMore:'MORE DETAILS', artLess:'SHOW LESS', regVerifyNote:'We will send a verification link to your email.',
     verifyMsg:'⚠️ Verify your email to save progress online.', resendVerify:'Resend Email', recheckVerify:'I Verified — Check Again',
-    mustVerify:'Please verify your email first — check your inbox for the link.', verifySent:'Verification email sent!', stillNotVerified:'Still not verified — check your inbox/spam.', nowVerified:'Email verified! Welcome.',
+    mustVerify:'Please verify your email first.', verifySent:'Verification email sent!', stillNotVerified:'Still not verified.', nowVerified:'Email verified! Welcome.',
     reviveNo:'Not enough coins to revive.', reviveMax:'No more revives left this run.'
   },
   vi:{ title:'🥔 POTATO RUN', subtitle:'Game chạy vượt chướng ngại vật miễn phí trên trình duyệt.',
@@ -440,939 +443,538 @@ var I18N = {
     leaderboardTop:'TOP 100 — RESET MỖI TUẦN', finding:'ĐANG TÌM ĐỐI THỦ...', cancel:'HỦY',
     paused:'TẠM DỪNG', resume:'TIẾP TỤC', quit:'THOÁT', gameOver:'GAME OVER',
     score:'Điểm', coinsGained:'Coin nhận được', retry:'CHƠI LẠI', menu:'MENU', revive:'HỒI SINH (100 🪙)',
-    artAbout:'GIỚI THIỆU', artAboutTxt:'Potato Run là game chạy vượt chướng ngại vật miễn phí chơi ngay trên trình duyệt. Điều khiển khoai tây né gai, chim và tường rào, đập khối bí ẩn để nhận thưởng ngẫu nhiên, nhặt coin rải khắp đường chạy và mở khóa skin độc đáo. Đạt 1.000 điểm để mở khóa Potato Solo.',
-    artHow:'CÁCH CHƠI', artHow1:'PC: nhấn <span class="kbd">SPACE</span> hoặc click để nhảy, nhấn lần 2 khi đang trên không để nhảy đôi — cần thiết để vượt tường rào cao.',
+    artAbout:'GIỚI THIỆU', artAboutTxt:'Potato Run là game chạy vượt chướng ngại vật miễn phí chơi ngay trên trình duyệt.',
+    artHow:'CÁCH CHƠI', artHow1:'PC: nhấn SPACE hoặc click để nhảy; nhảy đôi để vượt tường cao.',
     artHow2:'Mobile: chạm 1 lần để nhảy, chạm nhanh lần 2 để nhảy đôi.',
-    artHow3:'Điểm tự động tăng liên tục mỗi giây trong lúc chạy — vượt chướng ngại vật không cộng điểm, chỉ coin mới cộng.',
-    artHow4:'Khối bí ẩn cho thưởng ngẫu nhiên: cộng coin, thêm tim, khiên phá hủy chướng ngại gần đó, x2 điểm, hoặc (hiếm khi) mất 1 tim — cẩn thận khi chạm vào!',
-    artAccount:'TÀI KHOẢN & TIẾN TRÌNH', artAccountTxt:'Chơi không đăng nhập vẫn lưu coin trên máy. Đăng nhập bất cứ lúc nào, coin và điểm cao hiện có sẽ tự động gộp vào tài khoản. Cần tài khoản để dùng Bảng xếp hạng, Nhiệm vụ ngày và Potato Solo.',
-    aboutUs:'Về chúng tôi', contactUs:'Liên hệ', privacy:'Chính sách', aboutTxt:'Potato Run là dự án game nhỏ độc lập, chơi miễn phí trên mọi trình duyệt.',
-    contactTxt:'Mọi câu hỏi, báo lỗi hoặc góp ý:', privacyTxt:'Chúng tôi lưu tên hiển thị và email (để đăng nhập) cùng dữ liệu chơi game. Mật khẩu do Firebase Authentication xử lý hoàn toàn. Google AdSense có thể dùng cookie để cá nhân hóa quảng cáo.',
+    artHow3:'Điểm tự động tăng liên tục theo thời gian.', artHow4:'Khối bí ẩn cho thưởng ngẫu nhiên.',
+    artAccount:'TÀI KHOẢN & TIẾN TRÌNH', artAccountTxt:'Tiến trình tự động đồng bộ khi đăng nhập.',
+    aboutUs:'Về chúng tôi', contactUs:'Liên hệ', privacy:'Chính sách', aboutTxt:'Potato Run là dự án game nhỏ độc lập chơi miễn phí.',
+    contactTxt:'Mọi câu hỏi hoặc góp ý:', privacyTxt:'Chúng tôi bảo vệ thông tin cá nhân và dữ liệu chơi game của bạn.',
     login:'ĐĂNG NHẬP', register:'ĐĂNG KÝ', forgot:'Quên mật khẩu?', emailLbl:'Gmail / Email', passLbl:'Mật khẩu',
-    nameLbl:'Tên hiển thị (đổi được)', confirmLbl:'Nhập lại mật khẩu',
-    sendReset:'GỬI LINK ĐẶT LẠI', profile:'Hồ sơ', guestTxt:'Bạn đang chơi ở chế độ khách. Đăng nhập để lưu tiến trình online.',
-    loginRegister:'Đăng nhập / Đăng ký', coins:'Coin', highScore:'Điểm cao nhất', saveName:'LƯU TÊN', logout:'ĐĂNG XUẤT',
-    needLogin:'Cần đăng nhập để dùng tính năng online này!', needScore:'Cần đạt 1.000 điểm ở chế độ thường để mở Potato Solo! (Cao nhất: ', banned:'Tài khoản của bạn đã bị khóa.', banReason:'Lý do: ', banUntil:'Đến: ',
+    nameLbl:'Tên hiển thị', confirmLbl:'Nhập lại mật khẩu', sendReset:'GỬI LINK ĐẶT LẠI', profile:'Hồ sơ',
+    guestTxt:'Bạn đang chơi ở chế độ khách. Đăng nhập để lưu tiến trình online.', loginRegister:'Đăng nhập / Đăng ký',
+    coins:'Coin', highScore:'Điểm cao nhất', saveName:'LƯU TÊN', logout:'ĐĂNG XUẤT',
+    needLogin:'Cần đăng nhập để dùng tính năng online này!', needScore:'Cần đạt 1.000 điểm ở chế độ thường để mở Potato Solo! (Cao nhất: ',
+    banned:'Tài khoản của bạn đã bị khóa.', banReason:'Lý do: ', banUntil:'Đến: ',
     resetsAt:'Reset tiếp theo vào 00:00 (giờ VN) — ', claim:'NHẬN', claimed:'ĐÃ NHẬN', noMissions:'Đang tải nhiệm vụ...',
-    win:'🏆 BẠN THẮNG!', lose:'BẠN THUA', passMismatch:'Mật khẩu nhập lại không khớp', fillAll:'Vui lòng điền đầy đủ', resetSent:'Đã gửi email đặt lại mật khẩu!',
-    artB1:'🥔 Né gai, chim và tường rào — nhảy đôi khi cần lên cao hơn.', artB2:'🪙 Nhặt coin và khối bí ẩn trên đường chạy để mở khóa 14 skin.', artB3:'🏆 Đạt 1.000 điểm để mở Potato Solo và đấu BXH hàng tuần.',
-    artMore:'XEM THÊM CHI TIẾT', artLess:'THU GỌN',
-    regVerifyNote:'Chúng tôi sẽ gửi link xác minh vào email — bạn cần xác minh trước khi đăng nhập lần đầu.',
+    win:'🏆 BẠN THẮNG!', lose:'BẠN THUA', passMismatch:'Mật khẩu nhập lại không khớp', fillAll:'Vui lòng điền đầy đủ',
+    resetSent:'Đã gửi email đặt lại mật khẩu!', artB1:'🥔 Né gai, chim và tường rào.',
+    artB2:'🪙 Nhặt coin và khối bí ẩn để mở khóa 14 skin.', artB3:'🏆 Đạt 1.000 điểm để mở Potato Solo.',
+    artMore:'XEM THÊM CHI TIẾT', artLess:'THU GỌN', regVerifyNote:'Chúng tôi sẽ gửi link xác minh vào email.',
     verifyMsg:'⚠️ Cần xác minh email để lưu tiến trình online.', resendVerify:'Gửi lại Email', recheckVerify:'Đã xác minh — Kiểm tra lại',
-    mustVerify:'Vui lòng xác minh email trước — kiểm tra hộp thư để lấy link.', verifySent:'Đã gửi email xác minh!', stillNotVerified:'Vẫn chưa xác minh — kiểm tra hộp thư/spam.', nowVerified:'Email đã xác minh! Chào mừng.',
-    reviveNo:'Không đủ coin để hồi sinh.', reviveMax:'Đã dùng hết lượt hồi sinh trong lượt chơi này.'
+    mustVerify:'Vui lòng xác minh email trước.', verifySent:'Đã gửi email xác minh!', stillNotVerified:'Vẫn chưa xác minh.', nowVerified:'Email đã xác minh! Chào mừng.',
+    reviveNo:'Không đủ coin để hồi sinh.', reviveMax:'Đã hết lượt hồi sinh lượt này.'
   }
 };
-function t(key){ return (I18N[LANG] && I18N[LANG][key]) || key; }
+
+function t(k){ return (I18N[LANG] && I18N[LANG][k]) || I18N.en[k] || k; }
+
 function applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(function(elm){ elm.innerHTML = t(elm.getAttribute('data-i18n')); });
-  document.querySelectorAll('[data-i18n-prefix]').forEach(function(elm){
-    var key = elm.getAttribute('data-i18n-prefix'); var b = elm.querySelector('b');
-    elm.innerHTML = t(key) + ': '; elm.appendChild(b);
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var key = el.getAttribute('data-i18n');
+    el.innerHTML = t(key);
   });
-  el('langBtn').textContent = LANG==='en' ? 'VI' : 'EN';
-  document.documentElement.lang = LANG;
+  document.getElementById('langBtn').innerText = LANG.toUpperCase();
 }
-function el(id){ return document.getElementById(id); }
-el('langBtn').addEventListener('click', function(){
-  LANG = LANG==='en' ? 'vi' : 'en'; localStorage.setItem('pr_lang',LANG); applyI18n(); renderSkinGrid();
+
+/* ============================================================
+   GAME DATA & SKINS
+============================================================ */
+var SKINS = [
+  { id:'classic', name:'Classic', price:0, color:'#c8963e' },
+  { id:'sweet', name:'Sweet Potato', price:150, color:'#8e3b75' },
+  { id:'fries', name:'Crispy Fry', price:300, color:'#f4c430' },
+  { id:'chef', name:'Chef Potato', price:500, color:'#e8e8e8' },
+  { id:'ninja', name:'Ninja Potato', price:750, color:'#2b2b2b' },
+  { id:'gold', name:'Golden Tater', price:1000, color:'#ffd700' },
+  { id:'cyborg', name:'Cyborg Spud', price:1500, color:'#4682b4' },
+  { id:'alien', name:'Alien Potato', price:2000, color:'#32cd32' },
+  { id:'cosmic', name:'Cosmic Spud', price:2500, color:'#8a2be2' },
+  { id:'king', name:'King Potato', price:3000, color:'#ff4500' },
+  { id:'dragon', name:'Dragon Spud', price:4000, color:'#b22222' },
+  { id:'ghost', name:'Ghost Potato', price:5000, color:'#e0ffff' },
+  { id:'pixel', name:'Pixel Spud', price:7500, color:'#ff69b4' },
+  { id:'god', name:'God Potato', price:10000, color:'#00ffff' }
+];
+
+var state = {
+  coins: parseInt(localStorage.getItem('pr_coins') || '0', 10),
+  highScore: parseInt(localStorage.getItem('pr_high') || '0', 10),
+  selectedSkin: localStorage.getItem('pr_skin') || 'classic',
+  ownedSkins: JSON.parse(localStorage.getItem('pr_owned_skins') || '["classic"]'),
+  muted: localStorage.getItem('pr_muted') === 'true',
+  user: null,
+  userData: null
+};
+
+function saveLocalState(){
+  localStorage.setItem('pr_coins', state.coins);
+  localStorage.setItem('pr_high', state.highScore);
+  localStorage.setItem('pr_skin', state.selectedSkin);
+  localStorage.setItem('pr_owned_skins', JSON.stringify(state.ownedSkins));
+  updateUI();
+}
+
+function updateUI(){
+  document.getElementById('lobbyCoins').innerText = state.coins;
+  document.getElementById('skinsCoins').innerText = state.coins;
+  document.getElementById('profCoins').innerText = state.coins;
+  document.getElementById('profHigh').innerText = state.highScore;
+  document.getElementById('muteBtn').innerText = state.muted ? '🔇' : '🔊';
+}
+
+/* ============================================================
+   AUDIO ENGINE (Web Audio API)
+============================================================ */
+var audioCtx = null;
+function initAudio(){
+  if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+}
+function playSound(type){
+  if(state.muted) return;
+  initAudio();
+  if(!audioCtx) return;
+  try{
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    var now = audioCtx.currentTime;
+
+    if(type === 'jump'){
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(400, now + 0.12);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+      osc.start(now); osc.stop(now + 0.12);
+    } else if(type === 'coin'){
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.setValueAtTime(800, now + 0.08);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.16);
+      osc.start(now); osc.stop(now + 0.16);
+    } else if(type === 'hit'){
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(120, now);
+      osc.frequency.linearRampToValueAtTime(40, now + 0.2);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+      osc.start(now); osc.stop(now + 0.2);
+    }
+  }catch(e){}
+}
+
+/* ============================================================
+   SCREEN MANAGEMENT & MODALS
+============================================================ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  if(id === 'lobby'){ startLobbyPreview(); }
+  else { stopLobbyPreview(); }
+}
+
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+document.querySelectorAll('[data-modal]').forEach(b => {
+  b.addEventListener('click', () => openModal(b.getAttribute('data-modal')));
+});
+document.querySelectorAll('[data-close]').forEach(b => {
+  b.addEventListener('click', () => b.closest('.modal-back').classList.remove('show'));
 });
 
 /* ============================================================
-   GLOBAL UI CLICK SOUND (delegated)
+   GAME ENGINE & CANVAS
 ============================================================ */
-document.addEventListener('click', function(e){
-  var target = e.target.closest('button, .icon-btn, .skin-card button');
-  if(target) sUIClick();
-}, true);
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+var gameLoopReq = null;
+var isPlaying = false;
+var isPaused = false;
+var isSoloMode = false;
 
-/* ============================================================
-   LOCAL SAVE
-============================================================ */
-var DEFAULT_SAVE = { coins:0, owned:['classic'], equipped:'classic', highScore:0, muted:false };
-var store = JSON.parse(JSON.stringify(DEFAULT_SAVE));
-try{ var raw = localStorage.getItem('potatorun_save_v4'); if(raw) store = Object.assign(store, JSON.parse(raw)); }catch(e){}
-function saveLocal(){ try{ localStorage.setItem('potatorun_save_v4', JSON.stringify(store)); }catch(e){} }
-window.addEventListener('beforeunload', function(){ saveLocal(); if(currentUser) pushUserDoc(); });
-document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden'){ saveLocal(); if(currentUser) pushUserDoc(); } });
-setInterval(function(){ saveLocal(); if(currentUser) pushUserDoc(); }, 5000);
-
-function showScreen(id){
-  ['lobby','skins','leaderboard','missions','matchmaking','game'].forEach(function(s){ el(s).classList.toggle('hidden', s!==id); });
-  if(id==='lobby') startLobbyPreview(); else stopLobbyPreview();
-}
-
-/* ============================================================
-   SKINS
-============================================================ */
-/* ---- pixel-art potato: one shared 10x10 grid used by SVG (shop) and canvas (game/lobby) ---- */
-var POTATO_GRID = [
-  "..........",
-  "..........",
-  "..XXXXXX..",
-  ".XXXXXXXX.",
-  "XXXXXXXXXX",
-  "XXXXXXXXXX",
-  "XXXXXXXXXX",
-  "XXXXXXXXXX",
-  ".XXXXXXXX.",
-  "..XXXXXX.."
-];
-var SKINS = {
-  classic:{ name:{vi:'Nguyên bản',en:'Classic'}, price:0, body:'#f0b25a', accent:'#c9863a' },
-  sunny:  { name:{vi:'Kính Râm',en:'Sunny Shades'}, price:50, body:'#f3b761', accent:'#c9863a',
-    extra:[[2,3,'#242424'],[3,3,'#242424'],[4,3,'#242424'],[5,3,'#242424'],[6,3,'#242424'],[7,3,'#242424']] },
-  beachy: { name:{vi:'Biển Xanh',en:'Beach Spud'}, price:90, body:'#f5be6a', accent:'#c9863a',
-    extra:[[2,2,'#4fc0f0'],[3,2,'#4fc0f0'],[4,2,'#4fc0f0'],[5,2,'#4fc0f0'],[6,2,'#4fc0f0'],[7,2,'#4fc0f0']] },
-  chef:   { name:{vi:'Đầu Bếp',en:'Chef Spud'}, price:120, body:'#efb35c', accent:'#c9863a',
-    extra:[[4,0,'#fffdf5'],[5,0,'#fffdf5'],[2,1,'#fffdf5'],[3,1,'#fffdf5'],[4,1,'#fffdf5'],[5,1,'#fffdf5'],[6,1,'#fffdf5'],[7,1,'#fffdf5']] },
-  panda:  { name:{vi:'Gấu Trúc',en:'Panda Spud'}, price:180, body:'#f5f2e6', accent:'#cfc8b4',
-    hideEyes:true, extra:[[1,0,'#222'],[8,0,'#222'],[1,1,'#222'],[8,1,'#222'],[3,4,'#222'],[6,4,'#222']] },
-  ninja:  { name:{vi:'Ninja',en:'Ninja Spud'}, price:220, body:'#e0a655', accent:'#1f2126',
-    extra:[[2,6,'#1f2126'],[3,6,'#1f2126'],[4,6,'#1f2126'],[5,6,'#1f2126'],[6,6,'#1f2126'],[7,6,'#1f2126']] },
-  pirate: { name:{vi:'Cướp Biển',en:'Pirate Spud'}, price:300, body:'#e0a655', accent:'#4a2f10',
-    extra:[[3,4,'#111'],[2,0,'#4a2f10'],[3,0,'#4a2f10'],[4,0,'#4a2f10'],[5,0,'#4a2f10'],[6,0,'#4a2f10'],[7,0,'#4a2f10'],[3,1,'#fff'],[4,1,'#fff']] },
-  wizard: { name:{vi:'Phù Thủy',en:'Wizard Spud'}, price:380, body:'#e6ac5c', accent:'#5c46a0',
-    extra:[[4,0,'#5c46a0'],[5,0,'#5c46a0'],[3,1,'#5c46a0'],[4,1,'#5c46a0'],[5,1,'#5c46a0'],[6,1,'#5c46a0'],[4,0,'#ffe27a']] },
-  royal:  { name:{vi:'Hoàng Gia',en:'Royal Spud'}, price:450, body:'#f0be6a', accent:'#a87f28',
-    extra:[[2,0,'#ffe27a'],[4,0,'#ffe27a'],[6,0,'#ffe27a'],[8,0,'#ffe27a'],[2,1,'#ffe27a'],[3,1,'#ffe27a'],[4,1,'#ffe27a'],[5,1,'#ffe27a'],[6,1,'#ffe27a'],[7,1,'#ffe27a']] },
-  zombie: { name:{vi:'Xác Sống',en:'Zombie Spud'}, price:520, body:'#8fc074', accent:'#3d5e32',
-    extra:[[0,5,'#3d5e32'],[9,6,'#3d5e32'],[1,7,'#3d5e32']] },
-  robot:  { name:{vi:'Robot',en:'Robo Spud'}, price:650, body:'#b0bcc7', accent:'#4a5258',
-    hideEyes:true, hideMouth:true, extra:[[2,4,'#5ee0ff'],[3,4,'#5ee0ff'],[4,4,'#5ee0ff'],[5,4,'#5ee0ff'],[6,4,'#5ee0ff'],[7,4,'#5ee0ff']] },
-  astro:  { name:{vi:'Phi Hành Gia',en:'Astro Spud'}, price:800, body:'#e0a655', accent:'#8a5c1f',
-    extra:[[1,2,'#bfe9f0'],[8,2,'#bfe9f0'],[2,1,'#bfe9f0'],[3,1,'#bfe9f0'],[4,1,'#bfe9f0'],[5,1,'#bfe9f0'],[6,1,'#bfe9f0'],[7,1,'#bfe9f0']] },
-  dragon: { name:{vi:'Rồng Lửa',en:'Dragon Spud'}, price:900, body:'#f0703a', accent:'#8a2a10',
-    extra:[[0,0,'#ffcf3d'],[0,1,'#ffcf3d'],[9,0,'#ffcf3d'],[9,1,'#ffcf3d'],[4,0,'#ffcf3d'],[5,0,'#ffcf3d']] },
-  golden: { name:{vi:'Khoai Vàng',en:'Golden King'}, price:1000, body:'#ffd766', accent:'#c99a1a',
-    extra:[[2,0,'#fff3c2'],[4,0,'#fff3c2'],[6,0,'#fff3c2'],[8,0,'#fff3c2'],[2,1,'#fff3c2'],[3,1,'#fff3c2'],[4,1,'#fff3c2'],[5,1,'#fff3c2'],[6,1,'#fff3c2'],[7,1,'#fff3c2'],[3,3,'#fff']] }
+var game = {
+  score: 0,
+  coinsGained: 0,
+  lives: 3,
+  speed: 5,
+  revivesUsed: 0,
+  player: { x:50, y:0, w:30, h:30, vy:0, jumps:0, isGrounded:false },
+  bot: { score: 0, active: false },
+  obstacles: [],
+  coins: [],
+  particles: []
 };
-function skinName(key){ var n = SKINS[key].name; return n[LANG]||n.en; }
-function potatoPixels(key, put){
-  var s = SKINS[key];
-  for(var y=0;y<10;y++) for(var x=0;x<10;x++){ if(POTATO_GRID[y][x]==='X') put(x,y,s.body); }
-  if(!s.hideEyes){ put(3,4,'#241a10'); put(6,4,'#241a10'); }
-  if(!s.hideMouth){ put(4,7,'#241a10'); put(5,7,'#241a10'); }
-  (s.extra||[]).forEach(function(p){ put(p[0],p[1],p[2]); });
+
+function resizeCanvas(){
+  var rect = document.getElementById('app').getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
 }
-function potatoSVG(key,size){
-  var rects='';
-  potatoPixels(key, function(x,y,color){ rects += '<rect x="'+x+'" y="'+y+'" width="1.02" height="1.02" fill="'+color+'"/>'; });
-  return '<svg viewBox="0 0 10 10" width="'+size+'" height="'+size+'" shape-rendering="crispEdges">'+rects+'</svg>';
+window.addEventListener('resize', resizeCanvas);
+
+function startGame(solo){
+  resizeCanvas();
+  isSoloMode = !!solo;
+  isPlaying = true;
+  isPaused = false;
+  game.score = 0;
+  game.coinsGained = 0;
+  game.lives = 3;
+  game.speed = 5;
+  game.revivesUsed = 0;
+  game.obstacles = [];
+  game.coins = [];
+  game.player.y = canvas.height - 70;
+  game.player.vy = 0;
+  game.bot.active = isSoloMode;
+  game.bot.score = 0;
+
+  document.getElementById('botHud').classList.toggle('hidden', !isSoloMode);
+  document.getElementById('pauseOverlay').classList.add('hidden');
+  document.getElementById('overOverlay').classList.add('hidden');
+  showScreen('game');
+  updateHeartsUI();
+  
+  cancelAnimationFrame(gameLoopReq);
+  lastTime = performance.now();
+  gameLoopReq = requestAnimationFrame(gameLoop);
 }
-function refreshCoinBadges(){ el('lobbyCoins').textContent = store.coins; el('skinsCoins').textContent = store.coins; }
-function renderSkinGrid(){
-  var grid = el('skinGrid'); grid.innerHTML='';
-  Object.keys(SKINS).forEach(function(key){
-    var s = SKINS[key];
-    var owned = store.owned.indexOf(key)!==-1;
-    var equipped = store.equipped===key;
+
+var lastTime = 0;
+var obstacleTimer = 0;
+
+function gameLoop(now){
+  if(!isPlaying) return;
+  var dt = (now - lastTime) / 1000;
+  lastTime = now;
+
+  if(!isPaused){
+    updateGame(dt);
+    renderGame();
+  }
+  gameLoopReq = requestAnimationFrame(gameLoop);
+}
+
+function updateGame(dt){
+  game.score += Math.round(dt * 10 * game.speed);
+  document.getElementById('scoreLbl').innerText = game.score;
+
+  // Physics Player
+  game.player.vy += 25 * dt * 60;
+  game.player.y += game.player.vy * dt;
+  var groundY = canvas.height - 40 - game.player.h;
+  if(game.player.y >= groundY){
+    game.player.y = groundY;
+    game.player.vy = 0;
+    game.player.isGrounded = true;
+    game.player.jumps = 0;
+  }
+
+  // Spawning
+  obstacleTimer += dt;
+  if(obstacleTimer > Math.max(1.0, 2.5 - game.score / 1000)){
+    obstacleTimer = 0;
+    game.obstacles.push({
+      x: canvas.width + 20,
+      y: canvas.height - 70,
+      w: 25, h: 30,
+      passed: false
+    });
+  }
+
+  // Update Obstacles
+  for(var i = game.obstacles.length - 1; i >= 0; i--){
+    var obs = game.obstacles[i];
+    obs.x -= game.speed * 60 * dt;
+    // Collision Check
+    if(checkCollision(game.player, obs)){
+      playSound('hit');
+      game.lives--;
+      updateHeartsUI();
+      game.obstacles.splice(i, 1);
+      if(game.lives <= 0){
+        gameOver();
+        return;
+      }
+    } else if(obs.x + obs.w < 0){
+      game.obstacles.splice(i, 1);
+    }
+  }
+
+  // Update Bot
+  if(game.bot.active){
+    game.bot.score += Math.round(dt * 9.5 * game.speed);
+    document.getElementById('botScoreLbl').innerText = '🤖 ' + game.bot.score;
+  }
+
+  game.speed += dt * 0.02;
+}
+
+function renderGame(){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Ground
+  ctx.fillStyle = '#142050';
+  ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+
+  // Player
+  var skinObj = SKINS.find(s => s.id === state.selectedSkin) || SKINS[0];
+  ctx.fillStyle = skinObj.color;
+  ctx.beginPath();
+  ctx.roundRect(game.player.x, game.player.y, game.player.w, game.player.h, 8);
+  ctx.fill();
+
+  // Obstacles
+  ctx.fillStyle = '#ff5b48';
+  for(var i = 0; i < game.obstacles.length; i++){
+    var obs = game.obstacles[i];
+    ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+  }
+}
+
+function checkCollision(a, b){
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function jump(){
+  if(!isPlaying || isPaused) return;
+  if(game.player.isGrounded || game.player.jumps < 2){
+    playSound('jump');
+    game.player.vy = -500;
+    game.player.jumps++;
+    game.player.isGrounded = false;
+  }
+}
+
+function updateHeartsUI(){
+  var html = '';
+  for(var i = 0; i < game.lives; i++) html += '<span>❤️</span>';
+  document.getElementById('hearts').innerHTML = html;
+}
+
+function gameOver(){
+  isPlaying = false;
+  if(game.score > state.highScore){
+    state.highScore = game.score;
+  }
+  state.coins += game.coinsGained;
+  saveLocalState();
+  syncFirebaseData();
+
+  document.getElementById('finalScore').innerText = game.score;
+  document.getElementById('finalCoins').innerText = game.coinsGained;
+  document.getElementById('overOverlay').classList.remove('hidden');
+}
+
+/* ============================================================
+   LOBBY PREVIEW ANIMATION
+============================================================ */
+var lobbyCanvas = document.getElementById('lobbyPreview');
+var lobbyCtx = lobbyCanvas.getContext('2d');
+var lobbyReq = null;
+
+function startLobbyPreview(){
+  stopLobbyPreview();
+  var rect = document.getElementById('app').getBoundingClientRect();
+  lobbyCanvas.width = rect.width;
+  lobbyCanvas.height = rect.height;
+  
+  var x = 0;
+  function anim(){
+    lobbyCtx.clearRect(0,0,lobbyCanvas.width,lobbyCanvas.height);
+    x = (x + 1) % lobbyCanvas.width;
+    lobbyCtx.fillStyle = '#283568';
+    lobbyCtx.fillRect(0,0,lobbyCanvas.width,lobbyCanvas.height);
+    lobbyCtx.fillStyle = '#142050';
+    lobbyCtx.fillRect(0, lobbyCanvas.height - 40, lobbyCanvas.width, 40);
+    lobbyReq = requestAnimationFrame(anim);
+  }
+  anim();
+}
+function stopLobbyPreview(){ cancelAnimationFrame(lobbyReq); }
+
+/* ============================================================
+   SKIN SHOP RENDER
+============================================================ */
+function renderSkins(){
+  var grid = document.getElementById('skinGrid');
+  grid.innerHTML = '';
+  SKINS.forEach(s => {
+    var isOwned = state.ownedSkins.includes(s.id);
+    var isSelected = state.selectedSkin === s.id;
     var card = document.createElement('div');
-    card.className='skin-card'+(equipped?' selected':'');
-    var label = equipped ? (LANG==='vi'?'ĐANG DÙNG':'EQUIPPED') : (owned ? (LANG==='vi'?'CHỌN':'SELECT') : (s.price+' coin'));
-    var disabled = (!owned && store.coins<s.price) ? 'disabled' : '';
-    card.innerHTML = '<div>'+potatoSVG(key,50)+'</div><div class="skin-name">'+skinName(key)+'</div>'+
-      (owned?'':'<div class="skin-price">🪙 '+s.price+'</div>')+
-      '<button class="buy-btn '+(equipped?'owned':'')+'" '+disabled+'>'+label+'</button>';
-    card.querySelector('button').addEventListener('click', function(){
-      if(store.equipped===key) return;
-      if(!owned){ if(store.coins<s.price) return; store.coins-=s.price; store.owned.push(key); }
-      store.equipped=key; saveLocal(); if(currentUser) pushUserDoc(); refreshCoinBadges(); renderSkinGrid();
+    card.className = 'skin-card' + (isSelected ? ' selected' : '');
+    card.innerHTML = `
+      <div style="width:30px; height:30px; background:${s.color}; border-radius:6px; margin:4px 0;"></div>
+      <div class="skin-name">${s.name}</div>
+      <div class="skin-price">${isOwned ? 'OWNED' : s.price + ' 🪙'}</div>
+      <button class="buy-btn ${isOwned ? 'owned' : ''}" ${isSelected ? 'disabled' : ''}>
+        ${isSelected ? 'EQUIPPED' : (isOwned ? 'EQUIP' : 'BUY')}
+      </button>
+    `;
+    card.querySelector('button').addEventListener('click', () => {
+      if(isOwned){
+        state.selectedSkin = s.id;
+        saveLocalState();
+        renderSkins();
+      } else if(state.coins >= s.price){
+        state.coins -= s.price;
+        state.ownedSkins.push(s.id);
+        state.selectedSkin = s.id;
+        saveLocalState();
+        renderSkins();
+      }
     });
     grid.appendChild(card);
   });
 }
 
 /* ============================================================
-   AUDIO
+   FIREBASE INTEGRATION & AUTH
 ============================================================ */
-var actx=null;
-function ac(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(actx&&actx.state==='suspended'){ try{actx.resume();}catch(e){} } return actx; }
-function tone(freq,dur,type,vol,delay){
-  if(store.muted) return; var a=ac(); if(!a) return;
-  try{ var t=a.currentTime+(delay||0); var o=a.createOscillator(), g=a.createGain();
-    o.type=type||'square'; o.frequency.setValueAtTime(freq,t);
-    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol||.14,t+.012);
-    g.gain.exponentialRampToValueAtTime(.001,t+dur);
-    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+dur+.03);
-  }catch(e){}
-}
-function noiseHit(dur,vol){
-  if(store.muted) return; var a=ac(); if(!a) return;
-  try{ var buf=a.createBuffer(1,a.sampleRate*dur,a.sampleRate), d=buf.getChannelData(0);
-    for(var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
-    var src=a.createBufferSource(); src.buffer=buf;
-    var g=a.createGain(); g.gain.setValueAtTime(vol||.12,a.currentTime);
-    g.gain.exponentialRampToValueAtTime(.001,a.currentTime+dur);
-    src.connect(g); g.connect(a.destination); src.start();
-  }catch(e){}
-}
-function sUIClick(){ tone(700,.045,'square',.06); }
-function sJump(){ tone(520,.1,'square',.13); tone(760,.08,'square',.08,.04); }
-function sDoubleJump(){ tone(660,.09,'square',.13); tone(920,.1,'square',.1,.05); }
-function sCoin(){ tone(880,.07,'triangle',.15); tone(1180,.09,'triangle',.13,.06); }
-function sHit(){ tone(160,.3,'sawtooth',.18); noiseHit(.25,.15); }
-function sMilestone(){ tone(660,.09,'sine',.13); tone(990,.12,'sine',.13,.09); }
-function sWin(){ tone(523,.12,'triangle',.16); tone(659,.12,'triangle',.16,.12); tone(784,.2,'triangle',.16,.24); }
-function sLose2(){ tone(392,.15,'sawtooth',.14); tone(261,.25,'sawtooth',.14,.15); }
-function sMystery(){ tone(784,.08,'square',.14); tone(988,.08,'square',.14,.08); tone(1319,.14,'square',.14,.16); }
-function sShield(){ tone(220,.2,'sawtooth',.1); noiseHit(.4,.2); tone(440,.15,'triangle',.12,.05); }
-function sHeart(){ tone(600,.1,'sine',.14); tone(900,.14,'sine',.14,.1); }
-function sHeartLoss(){ tone(300,.2,'sawtooth',.14); }
-function sX2(){ tone(440,.08,'square',.12); tone(660,.08,'square',.12,.07); tone(880,.12,'square',.12,.14); }
-
-var music={id:null, poolTimeout:null, lastIdx:-1};
-function stopMusic(){ if(music.id){ clearInterval(music.id); music.id=null; } if(music.poolTimeout){ clearTimeout(music.poolTimeout); music.poolTimeout=null; } }
-function playTrack(bpm,melody,bass,drums){
-  var stepMs=60000/bpm/2, step=0;
-  music.id=setInterval(function(){
-    var i=step%melody.length;
-    if(melody[i]) tone(melody[i],stepMs/1000*.85,'triangle',.11);
-    if(bass[i]) tone(bass[i],stepMs/1000*.9,'sine',.12);
-    if(drums&&drums[i]) noiseHit(.07,.09);
-    step++;
-  },stepMs);
-  return stepMs*melody.length;
-}
-function playMusicPool(pool){
-  stopMusic();
-  function next(){
-    var idx = Math.floor(Math.random()*pool.length);
-    if(pool.length>1 && idx===music.lastIdx) idx=(idx+1)%pool.length;
-    music.lastIdx = idx;
-    var trk = pool[idx];
-    var loopMs = playTrack(trk.bpm, trk.m, trk.b, trk.d);
-    music.poolTimeout = setTimeout(next, loopMs*(trk.repeats||3));
-  }
-  next();
-}
-/* three chill lobby tracks (rotate randomly) */
-var LOBBY_TRACKS=[
-  { bpm:112, m:[392,0,440,494,0,440,392,0,523,0,494,440,0,392,349,0], b:[98,0,0,0,110,0,0,0,98,0,0,0,130,0,0,0], repeats:3 },
-  { bpm:104, m:[440,0,523,0,494,0,440,0,392,0,440,494,0,440,392,0], b:[110,0,110,0,123,0,110,0,98,0,98,0,110,0,98,0], repeats:3 },
-  { bpm:120, m:[349,0,392,440,0,392,349,0,330,0,349,392,0,330,294,0], b:[87,0,0,0,98,0,0,0,82,0,0,0,73,0,0,0], repeats:3 }
-];
-/* three lively gameplay tracks (rotate randomly) */
-var GAME_TRACKS=[
-  { bpm:150, m:[523,0,659,0,587,0,523,0,494,0,587,0,523,0,440,0], b:[131,0,131,0,147,0,147,0,123,0,123,0,110,0,110,0], d:[1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1], repeats:3 },
-  { bpm:144, m:[440,0,523,0,494,0,440,0,392,0,494,0,440,0,349,0], b:[110,0,110,0,123,0,123,0,98,0,98,0,87,0,87,0], d:[1,0,1,0,1,0,0,1,1,0,1,0,1,0,0,1], repeats:3 },
-  { bpm:158, m:[587,0,698,0,659,0,587,0,523,0,659,0,587,0,494,0], b:[147,0,147,0,165,0,165,0,131,0,131,0,123,0,123,0], d:[1,0,0,1,1,1,0,1,1,0,0,1,1,1,0,1], repeats:3 }
-];
-var SOLO_TRACK = { bpm:165, m:[659,0,784,0,698,0,659,0,587,0,698,0,659,0,523,0], b:[165,0,165,0,175,0,175,0,147,0,147,0,131,0,131,0], d:[1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,1], repeats:6 };
-
-function updateMuteIcon(){ el('muteBtn').textContent = store.muted?'🔇':'🔊'; }
-el('muteBtn').addEventListener('click', function(){ store.muted=!store.muted; saveLocal(); updateMuteIcon(); });
-var unlocked=false;
-function unlockAudio(){ if(unlocked) return; unlocked=true; ac(); playMusicPool(LOBBY_TRACKS); }
-document.addEventListener('pointerdown', unlockAudio, {once:true});
-document.addEventListener('keydown', unlockAudio, {once:true});
-
-/* ============================================================
-   TIME HELPERS (Vietnam UTC+7)
-============================================================ */
-function vnNow(){ var n=new Date(); return new Date(n.getTime() + (n.getTimezoneOffset()*60000) + 7*3600000); }
-function dayId(){ var d=vnNow(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
-function weekId(){ var d=vnNow(); var onejan=new Date(d.getFullYear(),0,1); var week=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7); return d.getFullYear()+'-W'+week; }
-function msUntilNextMidnightVN(){ var d=vnNow(); var next=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1,0,0,0); return next-d; }
-function formatCountdown(ms){ var h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return h+'h'+(m<10?'0':'')+m+'m'; }
-
-/* ============================================================
-   FIREBASE WIRING (with email verification requirement)
-============================================================ */
-var FB=null, currentUser=null, pendingUnverifiedUser=null;
-
-window.addEventListener('pr-firebase-ready', function(){ FB = window.__PR_FB; wireAuth(); });
-function userDocRef(uid){ return FB.doc(FB.dbase, 'users', uid); }
-
-function wireAuth(){
-  FB.onAuthStateChanged(FB.auth, async function(user){
-    if(user && !user.emailVerified){
-      pendingUnverifiedUser = user; currentUser = null;
-      el('verifyBanner').classList.remove('hidden');
-      el('loginHint').classList.remove('hidden');
-      updateSoloBtnState();
-      return;
-    }
-    el('verifyBanner').classList.add('hidden');
-    pendingUnverifiedUser = null;
-    if(user){
-      var ref = userDocRef(user.uid);
-      var snap = await FB.getDoc(ref);
-      if(!snap.exists()){
-        await FB.setDoc(ref, {
-          name: user.displayName || user.email.split('@')[0],
-          email: user.email, coins: store.coins, highScore: store.highScore,
-          owned: store.owned, equipped: store.equipped,
-          banned:false, banUntil:null, banReason:'', createdAt: Date.now()
-        });
-      } else {
-        var data = snap.data();
-        if(data.banned && (!data.banUntil || data.banUntil > Date.now())){
-          alert(t('banned')+' '+(data.banReason?(t('banReason')+data.banReason):'')+' '+(data.banUntil?(t('banUntil')+new Date(data.banUntil).toLocaleString()):''));
-          await FB.signOut(FB.auth); return;
-        }
-        store.coins = Math.max(store.coins, data.coins||0);
-        store.highScore = Math.max(store.highScore, data.highScore||0);
-        if(data.owned){ data.owned.forEach(function(k){ if(store.owned.indexOf(k)===-1) store.owned.push(k); }); }
-        store.equipped = data.equipped || store.equipped;
-        saveLocal();
-      }
-      currentUser = user;
-      await pushUserDoc();
-      el('loginHint').classList.add('hidden');
-      updateSoloBtnState();
-      refreshCoinBadges(); renderSkinGrid();
+var FB = null;
+window.addEventListener('pr-firebase-ready', () => {
+  FB = window.__PR_FB;
+  FB.onAuthStateChanged(FB.auth, (u) => {
+    state.user = u;
+    if(u){
+      document.getElementById('loginHint').classList.add('hidden');
+      document.getElementById('profileGuest').classList.add('hidden');
+      document.getElementById('profileUser').classList.remove('hidden');
+      document.getElementById('profEmail').value = u.email;
+      document.getElementById('profName').value = u.displayName || u.email.split('@')[0];
+      loadFirebaseUserData(u.uid);
     } else {
-      currentUser = null;
-      el('loginHint').classList.remove('hidden');
-      updateSoloBtnState();
+      document.getElementById('loginHint').classList.remove('hidden');
+      document.getElementById('profileGuest').classList.remove('hidden');
+      document.getElementById('profileUser').classList.add('hidden');
+    }
+  });
+});
+
+function loadFirebaseUserData(uid){
+  var ref = FB.doc(FB.dbase, 'users', uid);
+  FB.getDoc(ref).then(snap => {
+    if(snap.exists()){
+      var d = snap.data();
+      state.coins = Math.max(state.coins, d.coins || 0);
+      state.highScore = Math.max(state.highScore, d.highScore || 0);
+      saveLocalState();
+    } else {
+      syncFirebaseData();
     }
   });
 }
-async function pushUserDoc(){
-  if(!currentUser||!FB) return;
-  try{ await FB.updateDoc(userDocRef(currentUser.uid), { coins: store.coins, highScore: store.highScore, owned: store.owned, equipped: store.equipped }); }catch(e){}
+
+function syncFirebaseData(){
+  if(!state.user || !FB) return;
+  var ref = FB.doc(FB.dbase, 'users', state.user.uid);
+  FB.setDoc(ref, {
+    displayName: state.user.displayName || state.user.email.split('@')[0],
+    coins: state.coins,
+    highScore: state.highScore,
+    updatedAt: new Date()
+  }, { merge: true });
 }
 
-el('resendVerifyBtn').addEventListener('click', async function(){
-  if(!pendingUnverifiedUser) return;
-  try{ await FB.sendEmailVerification(pendingUnverifiedUser); alert(t('verifySent')); }catch(e){ alert(e.message); }
-});
-el('recheckVerifyBtn').addEventListener('click', async function(){
-  if(!pendingUnverifiedUser) return;
-  try{
-    await FB.reload(pendingUnverifiedUser);
-    if(pendingUnverifiedUser.emailVerified){ alert(t('nowVerified')); wireAuth_recheck(); }
-    else alert(t('stillNotVerified'));
-  }catch(e){ alert(e.message); }
-});
-function wireAuth_recheck(){
-  // re-trigger the auth handler manually with the now-verified user
-  var u = pendingUnverifiedUser; pendingUnverifiedUser = null;
-  FB.onAuthStateChanged(FB.auth, function(){}); // no-op safeguard
-  location.reload();
-}
+/* ============================================================
+   EVENT LISTENERS & BINDINGS
+============================================================ */
+document.getElementById('playBtn').onclick = () => startGame(false);
+document.getElementById('soloBtn').onclick = () => {
+  if(!state.user){ alert(t('needLogin')); return; }
+  if(state.highScore < 1000){ alert(t('needScore') + state.highScore + ')'); return; }
+  startGame(true);
+};
+document.getElementById('skinBtn').onclick = () => { renderSkins(); showScreen('skins'); };
+document.getElementById('backFromSkins').onclick = () => showScreen('lobby');
+document.getElementById('rankBtn').onclick = () => { showScreen('leaderboard'); loadLeaderboard(); };
+document.getElementById('backFromRank').onclick = () => showScreen('lobby');
+document.getElementById('missionBtn').onclick = () => showScreen('missions');
+document.getElementById('backFromMissions').onclick = () => showScreen('lobby');
 
-/* ---- modals ---- */
-function openModal(id){ el(id).classList.add('show'); }
-function closeModal(id){ el(id).classList.remove('show'); }
-document.querySelectorAll('.modal-back').forEach(function(m){
-  m.addEventListener('click', function(e){ if(e.target===m) m.classList.remove('show'); });
-  var c = m.querySelector('[data-close]'); if(c) c.addEventListener('click', function(){ m.classList.remove('show'); });
-});
-document.querySelectorAll('[data-modal]').forEach(function(btn){ btn.addEventListener('click', function(){ openModal(btn.getAttribute('data-modal')); }); });
+document.getElementById('pauseBtn').onclick = () => { isPaused = true; document.getElementById('pauseOverlay').classList.remove('hidden'); };
+document.getElementById('resumeBtn').onclick = () => { isPaused = false; document.getElementById('pauseOverlay').classList.add('hidden'); };
+document.getElementById('exitBtn').onclick = () => { isPlaying = false; showScreen('lobby'); };
 
-el('tabLogin').addEventListener('click', function(){ el('tabLogin').classList.add('active'); el('tabRegister').classList.remove('active'); el('authLogin').classList.remove('hidden'); el('authRegister').classList.add('hidden'); });
-el('tabRegister').addEventListener('click', function(){ el('tabRegister').classList.add('active'); el('tabLogin').classList.remove('active'); el('authRegister').classList.remove('hidden'); el('authLogin').classList.add('hidden'); });
-el('showForgot').addEventListener('click', function(){ el('forgotBox').classList.toggle('hidden'); });
+document.getElementById('retryBtn').onclick = () => startGame(isSoloMode);
+document.getElementById('menuBtn').onclick = () => showScreen('lobby');
 
-el('doLogin').addEventListener('click', async function(){
-  var email=el('loginEmail').value.trim(), pass=el('loginPass').value;
-  el('loginErr').textContent='';
-  if(!email||!pass){ el('loginErr').textContent=t('fillAll'); return; }
-  try{
-    var cred = await FB.signInWithEmailAndPassword(FB.auth, email, pass);
-    if(!cred.user.emailVerified){ el('loginErr').textContent = t('mustVerify'); return; }
-    closeModal('modalAuth');
-  }catch(e){ el('loginErr').textContent = e.message; }
-});
-el('doRegister').addEventListener('click', async function(){
-  var name=el('regName').value.trim(), email=el('regEmail').value.trim(), p1=el('regPass').value, p2=el('regPass2').value;
-  el('regErr').textContent='';
-  if(!name||!email||!p1||!p2){ el('regErr').textContent=t('fillAll'); return; }
-  if(p1!==p2){ el('regErr').textContent=t('passMismatch'); return; }
-  try{
-    var cred = await FB.createUserWithEmailAndPassword(FB.auth, email, p1);
-    await FB.updateProfile(cred.user, { displayName:name });
-    await FB.sendEmailVerification(cred.user);
+document.getElementById('muteBtn').onclick = () => { state.muted = !state.muted; saveLocalState(); };
+document.getElementById('langBtn').onclick = () => { LANG = (LANG === 'en' ? 'vi' : 'en'); localStorage.setItem('pr_lang', LANG); applyI18n(); };
+document.getElementById('profileBtn').onclick = () => openModal('modalProfile');
+
+// Control Inputs
+window.addEventListener('keydown', (e) => { if(e.code === 'Space') jump(); });
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); }, {passive:false});
+canvas.addEventListener('mousedown', jump);
+
+// Auth Tab switching
+document.getElementById('tabLogin').onclick = () => {
+  document.getElementById('tabLogin').classList.add('active');
+  document.getElementById('tabRegister').classList.remove('active');
+  document.getElementById('authLogin').classList.remove('hidden');
+  document.getElementById('authRegister').classList.add('hidden');
+};
+document.getElementById('tabRegister').onclick = () => {
+  document.getElementById('tabRegister').classList.add('active');
+  document.getElementById('tabLogin').classList.remove('active');
+  document.getElementById('authRegister').classList.remove('hidden');
+  document.getElementById('authLogin').classList.add('hidden');
+};
+document.getElementById('openAuthFromProfile').onclick = () => { closeModal('modalProfile'); openModal('modalAuth'); };
+
+// Do Login / Register
+document.getElementById('doLogin').onclick = () => {
+  var e = document.getElementById('loginEmail').value;
+  var p = document.getElementById('loginPass').value;
+  FB.signInWithEmailAndPassword(FB.auth, e, p).then(() => closeModal('modalAuth')).catch(err => {
+    document.getElementById('loginErr').innerText = err.message;
+  });
+};
+document.getElementById('doRegister').onclick = () => {
+  var n = document.getElementById('regName').value;
+  var e = document.getElementById('regEmail').value;
+  var p = document.getElementById('regPass').value;
+  var p2 = document.getElementById('regPass2').value;
+  if(p !== p2){ document.getElementById('regErr').innerText = t('passMismatch'); return; }
+
+  FB.createUserWithEmailAndPassword(FB.auth, e, p).then(cred => {
+    FB.updateProfile(cred.user, { displayName: n });
+    FB.sendEmailVerification(cred.user);
     closeModal('modalAuth');
     alert(t('verifySent'));
-  }catch(e){ el('regErr').textContent = e.message; }
-});
-el('doForgot').addEventListener('click', async function(){
-  var email=el('forgotEmail').value.trim(); el('forgotErr').textContent='';
-  if(!email){ el('forgotErr').textContent=t('fillAll'); return; }
-  try{ await FB.sendPasswordResetEmail(FB.auth, email); el('forgotErr').style.color='var(--green)'; el('forgotErr').textContent=t('resetSent'); }
-  catch(e){ el('forgotErr').style.color='var(--red)'; el('forgotErr').textContent = e.message; }
-});
+  }).catch(err => {
+    document.getElementById('regErr').innerText = err.message;
+  });
+};
+document.getElementById('logoutBtn').onclick = () => { FB.signOut(FB.auth); closeModal('modalProfile'); };
 
-el('profileBtn').addEventListener('click', function(){
-  if(currentUser){
-    el('profileGuest').classList.add('hidden'); el('profileUser').classList.remove('hidden');
-    el('profName').value = currentUser.displayName || ''; el('profEmail').value = currentUser.email || '';
-    el('profCoins').textContent = store.coins; el('profHigh').textContent = store.highScore;
-  } else { el('profileGuest').classList.remove('hidden'); el('profileUser').classList.add('hidden'); }
-  openModal('modalProfile');
-});
-el('openAuthFromProfile').addEventListener('click', function(){ closeModal('modalProfile'); openModal('modalAuth'); });
-el('saveProfileName').addEventListener('click', async function(){
-  if(!currentUser) return; var name = el('profName').value.trim(); if(!name) return;
-  try{ await FB.updateProfile(currentUser, { displayName:name }); await FB.updateDoc(userDocRef(currentUser.uid), { name:name }); closeModal('modalProfile'); }catch(e){}
-});
-el('logoutBtn').addEventListener('click', async function(){ await FB.signOut(FB.auth); closeModal('modalProfile'); });
-
-function requireLogin(){
-  if(!currentUser){ alert(t('needLogin')); openModal('modalAuth'); return false; }
-  return true;
-}
-
-/* ============================================================
-   LEADERBOARD
-============================================================ */
-el('rankBtn').addEventListener('click', async function(){
-  if(!requireLogin()) return;
-  showScreen('leaderboard');
-  el('lbResetHint').textContent = t('resetsAt') + formatCountdown(msUntilNextMidnightVN());
-  var list = el('leaderboardList'); list.innerHTML = '...';
-  try{
-    var wid = weekId();
-    var q = FB.query(FB.collection(FB.dbase, 'leaderboard_'+wid), FB.orderBy('score','desc'), FB.limit(100));
-    var snaps = await FB.getDocs(q);
-    list.innerHTML=''; var i=0;
-    snaps.forEach(function(d){ i++; var r=d.data(); var li=document.createElement('li');
-      li.innerHTML='<span>#'+i+' '+(r.name||'?')+'</span><span>'+Math.floor(r.score)+'</span>'; list.appendChild(li); });
-    if(i===0) list.innerHTML='<li style="justify-content:center;color:var(--cream-dim);">'+(LANG==='vi'?'Chưa có điểm nào':'No scores yet')+'</li>';
-  }catch(e){ list.innerHTML='<li>'+(e.message||'error')+'</li>'; }
-});
-el('backFromRank').addEventListener('click', function(){ showScreen('lobby'); });
-
-async function submitScoreToLeaderboard(score){
-  if(!currentUser||!FB) return;
-  try{
-    var wid = weekId(); var ref = FB.doc(FB.dbase, 'leaderboard_'+wid, currentUser.uid);
-    var snap = await FB.getDoc(ref); var best = snap.exists() ? (snap.data().score||0) : 0;
-    if(score > best) await FB.setDoc(ref, { name: currentUser.displayName || currentUser.email, score: Math.floor(score), uid: currentUser.uid });
-  }catch(e){}
-}
-
-/* ============================================================
-   DAILY MISSIONS
-============================================================ */
-var MISSIONS_TEMPLATE = [
-  { id:'score300', vi:'Đạt 300 điểm trong 1 lượt', en:'Reach 300 points in one run', target:300, reward:30, type:'score' },
-  { id:'coins15',  vi:'Nhặt 15 coin trong 1 lượt', en:'Collect 15 coins in one run', target:15, reward:25, type:'coins' },
-  { id:'plays3',   vi:'Chơi 3 lượt trong ngày', en:'Play 3 runs today', target:3, reward:20, type:'plays' }
-];
-var missionProgress = { score:0, coins:0, plays:0, claimed:{} };
-async function loadMissions(){
-  if(!currentUser||!FB) return;
-  var did = dayId();
-  try{
-    var ref = FB.doc(FB.dbase, 'missions_'+did, currentUser.uid);
-    var snap = await FB.getDoc(ref);
-    if(snap.exists()) missionProgress = Object.assign({score:0,coins:0,plays:0,claimed:{}}, snap.data());
-    else { missionProgress = {score:0,coins:0,plays:0,claimed:{}}; await FB.setDoc(ref, missionProgress); }
-  }catch(e){}
-}
-async function saveMissions(){ if(!currentUser||!FB) return; try{ await FB.setDoc(FB.doc(FB.dbase,'missions_'+dayId(),currentUser.uid), missionProgress); }catch(e){} }
-function renderMissions(){
-  var list = el('missionList'); list.innerHTML='';
-  MISSIONS_TEMPLATE.forEach(function(m){
-    var val = missionProgress[m.type] || 0; var done = val >= m.target; var claimed = !!missionProgress.claimed[m.id];
-    var li=document.createElement('li');
-    li.innerHTML = '<span class="m-txt">'+(LANG==='vi'?m.vi:m.en)+' ('+Math.min(val,m.target)+'/'+m.target+') — 🪙'+m.reward+'</span>'+
-      '<button class="m-btn" '+(!done||claimed?'disabled':'')+'>'+(claimed?t('claimed'):t('claim'))+'</button>';
-    li.querySelector('button').addEventListener('click', async function(){
-      if(!done||claimed) return; sCoin();
-      missionProgress.claimed[m.id]=true; store.coins += m.reward; saveLocal();
-      await saveMissions(); await pushUserDoc(); refreshCoinBadges(); renderMissions();
+function loadLeaderboard(){
+  var list = document.getElementById('leaderboardList');
+  list.innerHTML = '<li>Loading...</li>';
+  if(!FB) return;
+  var q = FB.query(FB.collection(FB.dbase, 'users'), FB.orderBy('highScore', 'desc'), FB.limit(100));
+  FB.getDocs(q).then(snaps => {
+    list.innerHTML = '';
+    var rank = 1;
+    snaps.forEach(docSnap => {
+      var d = docSnap.data();
+      var li = document.createElement('li');
+      li.innerHTML = `<span>#${rank} ${d.displayName || 'Runner'}</span><b>${d.highScore || 0}</b>`;
+      list.appendChild(li);
+      rank++;
     });
-    list.appendChild(li);
   });
 }
-el('missionBtn').addEventListener('click', async function(){
-  if(!requireLogin()) return;
-  el('missionResetHint').textContent = t('resetsAt') + formatCountdown(msUntilNextMidnightVN());
-  el('missionList').innerHTML = '<li>'+t('noMissions')+'</li>';
-  await loadMissions(); renderMissions(); showScreen('missions');
-});
-el('backFromMissions').addEventListener('click', function(){ showScreen('lobby'); });
 
-/* ============================================================
-   GAME
-============================================================ */
-var canvas=el('canvas'), ctx=canvas.getContext('2d');
-var W=0,H=0,GROUND=0;
-function resize(){
-  var r=el('gameWrap').getBoundingClientRect();
-  if(r.width<10||r.height<10) return;
-  W=canvas.width=Math.round(r.width); H=canvas.height=Math.round(r.height); GROUND=H*0.78;
-  if(state&&state.player) state.player.y = Math.min(state.player.y, GROUND-state.player.h);
-}
-window.addEventListener('resize', resize);
-window.addEventListener('orientationchange', function(){ setTimeout(resize,200); });
+// Initial Kickoff
+applyI18n();
+updateUI();
+showScreen('lobby');
 
-var state=null, loopRunning=false;
-var JUMP_V1=-12.6, JUMP_V2=-10.8, GRAVITY=.58;
-var MAX_LIVES=5;
-var REVIVE_MAX=3, REVIVE_BASE=100;
-
-function newState(mode){
-  return { mode:mode||'normal', running:false, paused:false, over:false,
-    t:0, speed:6.4, score:0, runCoins:0, lastMilestone:0, lives:1, invulnTimer:0,
-    shieldActive:false, shieldTimer:0, x2Active:false, x2Timer:0, reviveCount:0,
-    player:{ x:70, y:0, vy:0, w:44, h:44, onGround:true, jumps:0, rot:0, runPhase:0 },
-    obstacles:[], coins:[], mysteries:[], particles:[],
-    spawnTimer:0, nextSpawn:60, coinTimer:0, nextCoin:70, mysteryTimer:0, nextMystery:520, bot:null };
-}
-var BOT_NAMES=['SpudMaster','NoobPotato','Player_882','TurboTater','ChipKing','MashMaster','Player_417','ShadowSpud','LuckyFry','ProPotato99'];
-function makeBot(){
-  var name = BOT_NAMES[Math.floor(Math.random()*BOT_NAMES.length)]+(Math.random()<.4?('_'+(100+Math.floor(Math.random()*900))):'');
-  var willCrash = Math.random()<.55; var crashAt = willCrash ? (300+Math.random()*1400) : Infinity;
-  var skill = 0.8+Math.random()*0.9;
-  return { name:name, score:0, alive:true, crashAt:crashAt, skill:skill };
-}
-
-function startGame(mode){
-  showScreen('game'); resize();
-  state = newState(mode); state.player.y = GROUND-state.player.h;
-  el('overOverlay').classList.add('hidden'); el('pauseOverlay').classList.add('hidden');
-  el('soloResultWrap').classList.add('hidden'); el('botHud').classList.toggle('hidden', mode!=='solo');
-  if(mode==='solo'){ state.bot=makeBot(); el('botScoreLbl').textContent='🤖 '+state.bot.name+': 0'; }
-  state.running=true; state.paused=false; state.over=false; el('scoreLbl').textContent='0';
-  renderHearts(); renderBuffs();
-  if(mode==='solo') playTrack(SOLO_TRACK.bpm, SOLO_TRACK.m, SOLO_TRACK.b, SOLO_TRACK.d);
-  else playMusicPool(GAME_TRACKS);
-  if(!loopRunning){ loopRunning=true; requestAnimationFrame(loop); }
-}
-function jump(){
-  if(!state||!state.running||state.paused||state.over) return;
-  var p=state.player;
-  if(p.jumps<2){ p.vy = p.jumps===0?JUMP_V1:JUMP_V2; p.onGround=false; p.jumps++; if(p.jumps===1) sJump(); else sDoubleJump(); }
-}
-document.addEventListener('keydown', function(e){ if(e.code==='Space'){ e.preventDefault(); jump(); } });
-canvas.addEventListener('pointerdown', function(e){ e.preventDefault(); jump(); });
-
-function spawnObstacle(){
-  var r=Math.random();
-  if(r<0.32 && state.score>8) state.obstacles.push({type:'bird',x:W+20,y:GROUND-55-Math.random()*20,w:34,h:26,flap:0});
-  else if(r<0.5 && state.score>20) state.obstacles.push({type:'wall',x:W+20,y:GROUND-92,w:26,h:92});
-  else { var kinds=[{w:22,h:34},{w:30,h:28},{w:44,h:22}]; var k=kinds[Math.floor(Math.random()*kinds.length)];
-    state.obstacles.push({type:'spike',x:W+20,y:GROUND-k.h,w:k.w,h:k.h}); }
-  state.spawnTimer=0; state.nextSpawn=50+Math.random()*44-Math.min(state.speed*2,28);
-}
-function spawnCoin(){
-  var heightRoll = Math.random();
-  var y = heightRoll<0.4 ? (GROUND-40-Math.random()*20) : heightRoll<0.75 ? (GROUND-90-Math.random()*30) : (GROUND-140-Math.random()*20);
-  state.coins.push({ x:W+30+Math.random()*40, y:y, r:8, got:false });
-  state.coinTimer=0; state.nextCoin = 34+Math.random()*46;
-}
-function spawnMystery(){
-  state.mysteries.push({ x:W+30, y:GROUND-80-Math.random()*20, w:30, h:30, bob:0 });
-  state.mysteryTimer=0; state.nextMystery = 620 + Math.random()*560; // rare
-}
-function rectsOverlap(a,b){ return a.x<b.x+b.w-6 && a.x+a.w-6>b.x && a.y<b.y+b.h-4 && a.y+a.h-4>b.y; }
-
-function rollLoot(){
-  var r = Math.random()*100;
-  if(r<30) return 'coins50';
-  if(r<45) return 'shield';
-  if(r<70) return 'heart';
-  if(r<95) return 'x2';
-  return 'death';
-}
-function applyLoot(kind, atX, atY){
-  sMystery();
-  if(kind==='coins50'){
-    store.coins += 50; state.runCoins += 50; saveLocal();
-    state.particles.push({x:atX,y:atY,life:34,text:'+50 🪙'});
-  } else if(kind==='shield'){
-    sShield();
-    state.shieldActive = true; state.shieldTimer = 30*60;
-    // explode nearby obstacles & coins in close range
-    var radius = 140;
-    state.obstacles = state.obstacles.filter(function(o){
-      var near = Math.abs(o.x-atX) < radius;
-      if(near) state.particles.push({x:o.x,y:o.y,life:20,text:'💥'});
-      return !near;
-    });
-    state.coins.forEach(function(c){ if(Math.abs(c.x-atX)<radius && !c.got){ c.got=true; store.coins++; state.runCoins++; } });
-    state.particles.push({x:atX,y:atY,life:34,text:LANG==='vi'?'KHIÊN!':'SHIELD!'});
-  } else if(kind==='heart'){
-    sHeart();
-    state.lives = Math.min(MAX_LIVES, state.lives+1);
-    state.particles.push({x:atX,y:atY,life:34,text:'+1 ❤️'});
-  } else if(kind==='x2'){
-    sX2();
-    state.x2Active = true; state.x2Timer = 60*60;
-    state.particles.push({x:atX,y:atY,life:34,text:'x2 ⭐'});
-  } else if(kind==='death'){
-    sHeartLoss();
-    state.lives -= 1;
-    state.particles.push({x:atX,y:atY,life:34,text:LANG==='vi'?'-1 💀':'-1 💀'});
-    if(state.lives<=0){ endRun(); }
-    else state.invulnTimer = 90;
-  }
-  renderHearts(); renderBuffs();
-}
-
-function renderHearts(){
-  var wrap = el('hearts'); wrap.innerHTML='';
-  for(var i=0;i<state.lives;i++){ var s=document.createElement('span'); s.textContent='❤️'; wrap.appendChild(s); }
-}
-function renderBuffs(){
-  var wrap = el('buffHud'); wrap.innerHTML='';
-  if(state.shieldActive){ var s=document.createElement('div'); s.className='pill'; s.textContent='🛡️ '+Math.ceil(state.shieldTimer/60)+'s'; wrap.appendChild(s); }
-  if(state.x2Active){ var x=document.createElement('div'); x.className='pill'; x.textContent='x2 '+Math.ceil(state.x2Timer/60)+'s'; wrap.appendChild(x); }
-}
-
-function update(){
-  state.t++; state.speed=Math.min(14.5, 6.4+state.t/760);
-  var scoreGain = 0.065 * (state.x2Active?2:1);
-  state.score += scoreGain;
-
-  var p=state.player;
-  p.vy+=GRAVITY; p.y+=p.vy;
-  if(p.y>=GROUND-p.h){ p.y=GROUND-p.h; p.vy=0; p.onGround=true; p.jumps=0; }
-  p.rot = p.onGround?0:Math.max(-.5,Math.min(.5,p.vy*.03));
-  if(p.onGround) p.runPhase += 0.35;
-
-  if(state.invulnTimer>0) state.invulnTimer--;
-  if(state.shieldActive){ state.shieldTimer--; if(state.shieldTimer<=0){ state.shieldActive=false; } }
-  if(state.x2Active){ state.x2Timer--; if(state.x2Timer<=0){ state.x2Active=false; } }
-
-  state.spawnTimer++; if(state.spawnTimer>state.nextSpawn) spawnObstacle();
-  state.coinTimer++; if(state.coinTimer>state.nextCoin) spawnCoin();
-  state.mysteryTimer++; if(state.mysteryTimer>state.nextMystery) spawnMystery();
-
-  var pRect={x:p.x+6,y:p.y+6,w:p.w-10,h:p.h-10};
-
-  for(var i=state.obstacles.length-1;i>=0;i--){
-    var o=state.obstacles[i]; o.x-=state.speed;
-    if(o.type==='bird') o.flap+=0.25;
-    if(o.x<-70){ state.obstacles.splice(i,1); continue; }
-    if(state.invulnTimer<=0 && rectsOverlap(pRect,o)){
-      if(state.shieldActive){
-        sShield(); state.shieldActive=false; state.shieldTimer=0;
-        var rx=o.x;
-        state.obstacles = state.obstacles.filter(function(ob){ return Math.abs(ob.x-rx)>=140; });
-        state.particles.push({x:o.x,y:o.y,life:24,text:'💥'});
-        state.invulnTimer=40;
-      } else {
-        state.lives--; sHit();
-        if(state.lives<=0){ endRun(); return; }
-        state.invulnTimer=90;
-        state.obstacles.splice(i,1);
-      }
-      renderHearts();
-    }
-  }
-  for(var j=state.coins.length-1;j>=0;j--){
-    var c=state.coins[j]; c.x-=state.speed;
-    if(!c.got && Math.abs((p.x+p.w/2)-c.x)<24 && Math.abs((p.y+p.h/2)-c.y)<24){
-      c.got=true; state.runCoins++; store.coins++; saveLocal();
-      missionProgress.coins = Math.max(missionProgress.coins||0, state.runCoins);
-      state.particles.push({x:c.x,y:c.y,life:26,text:'+1'}); sCoin(); state.score+=2;
-    }
-    if(c.x<-40) state.coins.splice(j,1);
-  }
-  for(var k=state.mysteries.length-1;k>=0;k--){
-    var my=state.mysteries[k]; my.x-=state.speed; my.bob+=0.15;
-    if(Math.abs((p.x+p.w/2)-my.x)<26 && Math.abs((p.y+p.h/2)-my.y)<26){
-      applyLoot(rollLoot(), my.x, my.y);
-      state.mysteries.splice(k,1); continue;
-    }
-    if(my.x<-40) state.mysteries.splice(k,1);
-  }
-
-  var ms=Math.floor(state.t/60/10);
-  if(ms>state.lastMilestone){ state.lastMilestone=ms; state.score+=15; sMilestone(); }
-
-  if(state.mode==='solo' && state.bot && state.bot.alive){
-    state.bot.score += 0.065*state.bot.skill + Math.random()*0.3;
-    if(state.bot.score>=state.bot.crashAt) state.bot.alive=false;
-    el('botScoreLbl').textContent='🤖 '+state.bot.name+': '+Math.floor(state.bot.score);
-  }
-  for(var pi=state.particles.length-1;pi>=0;pi--){
-    var pt=state.particles[pi]; pt.y-=1.3; pt.life--; pt.x-=state.speed*.4;
-    if(pt.life<=0) state.particles.splice(pi,1);
-  }
-  el('scoreLbl').textContent = Math.floor(state.score);
-  missionProgress.score = Math.max(missionProgress.score||0, Math.floor(state.score));
-  if(state.t % 20 === 0) renderBuffs();
-}
-
-/* ---- scenery: brighter classic-pixel daytime look ---- */
-function drawScenery(pctx, pW, pH, pGROUND, t, speed){
-  var g = pctx.createLinearGradient(0,0,0,pGROUND);
-  g.addColorStop(0,'#6ec2f2'); g.addColorStop(1,'#bfe8ff');
-  pctx.fillStyle=g; pctx.fillRect(0,0,pW,pGROUND);
-  // pixel sun
-  var sunS = Math.max(16, pGROUND*0.14), sunX=pW-sunS*1.6, sunY=sunS*1.2;
-  pctx.fillStyle='#ffe066';
-  pctx.fillRect(sunX-sunS/2, sunY-sunS/2, sunS, sunS);
-  pctx.fillRect(sunX-sunS/2-4, sunY-sunS/4, 4, sunS/2);
-  pctx.fillRect(sunX+sunS/2, sunY-sunS/4, 4, sunS/2);
-
-  // blocky parallax hills, proportional height so they never overflow the sky
-  var hillH = Math.max(20, pGROUND*0.22);
-  var hillOff = (t*speed*0.12) % 220;
-  pctx.fillStyle='#8fd67a';
-  for(var i=-1;i<Math.ceil(pW/220)+1;i++){
-    var hx = i*220 - hillOff;
-    pctx.fillRect(hx, pGROUND-hillH*0.5, 220, hillH*0.5);
-    pctx.fillRect(hx+30, pGROUND-hillH*0.8, 160, hillH*0.3);
-    pctx.fillRect(hx+70, pGROUND-hillH, 90, hillH*0.2);
-  }
-  pctx.fillStyle='#79c468';
-  var hillOff2 = (t*speed*0.2) % 180;
-  for(var j=-1;j<Math.ceil(pW/180)+1;j++){
-    var hx2 = j*180 - hillOff2;
-    pctx.fillRect(hx2, pGROUND-hillH*0.35, 180, hillH*0.35);
-  }
-
-  // blocky clouds, positioned proportionally so they fit any canvas size
-  var cloudOff = (t*speed*0.3) % 260;
-  pctx.fillStyle='rgba(255,255,255,.92)';
-  for(var c=-1;c<Math.ceil(pW/260)+1;c++){
-    var cx = c*260 - cloudOff, cy = pGROUND*0.18 + ((c%2)*pGROUND*0.12);
-    pctx.fillRect(cx, cy, 34, 10);
-    pctx.fillRect(cx+8, cy-8, 20, 10);
-    pctx.fillRect(cx-6, cy+2, 46, 8);
-  }
-
-  // ground: grass strip + dirt brick pattern (fixed tiling, no gaps/seams)
-  pctx.fillStyle='#6bc24a'; pctx.fillRect(0,pGROUND,pW,10);
-  pctx.fillStyle='#57ad3c'; var goff=(t*speed)%16;
-  for(var gx=-16-goff; gx<pW; gx+=16){ pctx.fillRect(gx,pGROUND,8,4); }
-  pctx.fillStyle='#9a6b3a'; pctx.fillRect(0,pGROUND+10,pW,pH-pGROUND-10);
-  pctx.fillStyle='#84592c'; var off=(t*speed)%20;
-  for(var x=-20-off;x<pW+20;x+=20){ for(var yy=pGROUND+18;yy<pH;yy+=14){ pctx.fillRect(x,yy,4,4); } }
-}
-
-function drawPixelPotato(pctx, key, x, y, w, h, rot, squash, runPhase, onGround, shielded){
-  pctx.save(); pctx.translate(x+w/2,y+h/2); pctx.rotate(rot); pctx.translate(-w/2,-h/2);
-  pctx.save(); pctx.translate(w/2,h/2); pctx.scale(1/squash, squash); pctx.translate(-w/2,-h/2);
-  if(shielded){ pctx.strokeStyle='rgba(94,198,240,.85)'; pctx.lineWidth=3; pctx.beginPath(); pctx.arc(w/2,h/2,w/2+8,0,Math.PI*2); pctx.stroke(); }
-  if(onGround){ var s=SKINS[key]; pctx.fillStyle=s.accent; var legOff = Math.sin(runPhase)*5;
-    pctx.fillRect(w*0.28, h*0.86+legOff*0.3, 5, 6); pctx.fillRect(w*0.62, h*0.86-legOff*0.3, 5, 6); }
-  var scale = w/10;
-  potatoPixels(key, function(px,py,color){ pctx.fillStyle=color; pctx.fillRect(px*scale, py*scale*(h/w), scale+0.5, scale*(h/w)+0.5); });
-  pctx.restore(); pctx.restore();
-}
-function drawPlayer(){
-  var p=state.player;
-  var flashing = state.invulnTimer>0 && Math.floor(state.invulnTimer/6)%2===0;
-  if(flashing) ctx.globalAlpha=0.4;
-  var squash = p.onGround ? (1+Math.sin(p.runPhase)*0.04) : 1;
-  drawPixelPotato(ctx, store.equipped, p.x, p.y, p.w, p.h, p.rot, squash, p.runPhase, p.onGround, state.shieldActive);
-  ctx.globalAlpha=1;
-}
-
-function drawObstacles(){
-  state.obstacles.forEach(function(o){
-    if(o.type==='spike'){
-      var rows = Math.max(2, Math.round(o.h/8)); var px = o.w/ (rows*2-1||1);
-      px = Math.max(4, Math.min(px, o.w/3));
-      for(var r=0;r<rows;r++){
-        var rowW = o.w * ((r+1)/rows);
-        var rx = o.x + (o.w-rowW)/2, ry = o.y + o.h - (r+1)*(o.h/rows);
-        ctx.fillStyle = r%2===0 ? '#3fae4f' : '#57c968';
-        ctx.fillRect(rx, ry, rowW, o.h/rows-1);
-      }
-      ctx.fillStyle='#2c8a3a'; ctx.fillRect(o.x, o.y+o.h-4, o.w, 4);
-    } else if(o.type==='wall'){
-      ctx.fillStyle='#b9863f'; ctx.fillRect(o.x,o.y,o.w,o.h);
-      for(var by=o.y+6; by<o.y+o.h; by+=10){
-        ctx.fillStyle='rgba(0,0,0,.14)';
-        for(var bx=o.x+(((by-o.y)/10)%2===0?0:6); bx<o.x+o.w; bx+=12){ ctx.fillRect(bx,by,8,3); }
-      }
-      ctx.fillStyle='#ffc23d';
-      for(var cx=o.x-2; cx<o.x+o.w+2; cx+=8){ ctx.fillRect(cx,o.y-7,5,7); }
-    } else {
-      var flap = Math.sin(o.flap)>0 ? 1 : 0;
-      var bx0=o.x, by0=o.y, bw=o.w/8, bh=o.h/6;
-      ctx.fillStyle='#ff5b48';
-      ctx.fillRect(bx0+bw*2, by0, bw*4, bh); // head/body top
-      ctx.fillRect(bx0+bw, by0+bh, bw*6, bh*3);
-      ctx.fillRect(bx0+bw*2, by0+bh*4, bw*4, bh);
-      ctx.fillStyle='#ffc23d';
-      ctx.fillRect(bx0+bw*6.5, by0+bh*1.5, bw*1.8, bh); // beak
-      ctx.fillStyle='#241a10'; ctx.fillRect(bx0+bw*2.4, by0+bh*1.2, bw*0.8, bh*0.8); // eye
-      ctx.fillStyle='#c9402d';
-      if(flap){ ctx.fillRect(bx0, by0+bh*1.2, bw*1.6, bh*2); } // wing up
-      else{ ctx.fillRect(bx0+bw*0.6, by0+bh*2.4, bw*2, bh*1.6); } // wing down
-    }
-  });
-}
-function drawCoins(){
-  state.coins.forEach(function(c){ if(c.got) return;
-    ctx.fillStyle='#ffd766'; ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='#c99a1a'; ctx.lineWidth=1.5; ctx.stroke();
-  });
-}
-function drawMysteries(){
-  state.mysteries.forEach(function(m){
-    var bob = Math.sin(m.bob)*4;
-    ctx.fillStyle='#ffb347'; ctx.fillRect(m.x-m.w/2,m.y-m.h/2+bob,m.w,m.h);
-    ctx.strokeStyle='#c97a1a'; ctx.lineWidth=2; ctx.strokeRect(m.x-m.w/2,m.y-m.h/2+bob,m.w,m.h);
-    ctx.fillStyle='#fff'; ctx.font='700 18px Nunito, sans-serif'; ctx.textAlign='center';
-    ctx.fillText('?', m.x, m.y+6+bob); ctx.textAlign='left';
-  });
-}
-function drawParticles(){
-  ctx.font='700 12px Nunito, sans-serif'; ctx.fillStyle='#ffd766';
-  state.particles.forEach(function(pt){ ctx.globalAlpha=Math.max(0,pt.life/26); ctx.fillText(pt.text,pt.x,pt.y); });
-  ctx.globalAlpha=1;
-}
-function draw(){ ctx.clearRect(0,0,W,H); drawScenery(ctx,W,H,GROUND,state.t,state.speed); drawObstacles(); drawMysteries(); drawCoins(); drawPlayer(); drawParticles(); }
-function loop(){
-  if(state&&state.running){ if(!state.paused&&!state.over) update(); if(!state.over) draw(); }
-  requestAnimationFrame(loop);
-}
-
-/* ============================================================
-   LOBBY PREVIEW — potato auto-plays in a small looping scene
-============================================================ */
-var lobbyCanvas = el('lobbyPreview'), lobbyCtx = lobbyCanvas.getContext('2d');
-var lobbyPreviewRunning = false, lobbyRaf = null;
-var lp = { t:0, speed:5.5, player:{ x:0, y:0, vy:0, w:40, h:40, onGround:true, rot:0, runPhase:0 }, obstacles:[], nextSpawn:90, spawnTimer:0 };
-function resizeLobby(){
-  var r = lobbyCanvas.parentElement.getBoundingClientRect();
-  if(r.width<10||r.height<10) return;
-  lobbyCanvas.width = Math.round(r.width); lobbyCanvas.height = Math.round(r.height);
-  lp.ground = lobbyCanvas.height*0.78;
-  lp.player.x = lobbyCanvas.width*0.22;
-}
-window.addEventListener('resize', function(){ if(lobbyPreviewRunning) resizeLobby(); });
-
-function lpSpawnObstacle(){
-  var kinds=[{w:20,h:30},{w:26,h:24}];
-  var k = kinds[Math.floor(Math.random()*kinds.length)];
-  lp.obstacles.push({ x: lobbyCanvas.width+20, y: lp.ground-k.h, w:k.w, h:k.h });
-  lp.spawnTimer=0; lp.nextSpawn = 110+Math.random()*90;
-}
-function lobbyPreviewStep(){
-  if(!lobbyPreviewRunning) return;
-  lp.t++;
-  var p = lp.player;
-  p.vy += 0.58; p.y += p.vy;
-  if(p.y >= lp.ground-p.h){ p.y = lp.ground-p.h; p.vy=0; p.onGround=true; }
-  p.rot = p.onGround?0:Math.max(-.5,Math.min(.5,p.vy*.03));
-  if(p.onGround) p.runPhase += 0.35;
-
-  lp.spawnTimer++; if(lp.spawnTimer>lp.nextSpawn) lpSpawnObstacle();
-  for(var i=lp.obstacles.length-1;i>=0;i--){
-    var o=lp.obstacles[i]; o.x -= lp.speed;
-    // auto-jump a little before reaching the obstacle
-    if(p.onGround && o.x > p.x && o.x - p.x < 70 && o.x - p.x > 40){ p.vy=-12.4; p.onGround=false; }
-    if(o.x < -40) lp.obstacles.splice(i,1);
-  }
-
-  var lw=lobbyCanvas.width, lh=lobbyCanvas.height;
-  lobbyCtx.clearRect(0,0,lw,lh);
-  drawScenery(lobbyCtx, lw, lh, lp.ground, lp.t, lp.speed);
-  lp.obstacles.forEach(function(o){
-    lobbyCtx.fillStyle='#3fae4f';
-    lobbyCtx.fillRect(o.x, o.y, o.w, o.h);
-    lobbyCtx.fillStyle='#2c8a3a'; lobbyCtx.fillRect(o.x, o.y+o.h-4, o.w, 4);
-  });
-  var squash = p.onGround ? (1+Math.sin(p.runPhase)*0.04) : 1;
-  drawPixelPotato(lobbyCtx, store.equipped, p.x, p.y, p.w, p.h, p.rot, squash, p.runPhase, p.onGround, false);
-
-  lobbyRaf = requestAnimationFrame(lobbyPreviewStep);
-}
-function startLobbyPreview(){
-  if(lobbyPreviewRunning) return;
-  lobbyPreviewRunning = true;
-  resizeLobby();
-  lp.player.y = lp.ground - lp.player.h;
-  lobbyRaf = requestAnimationFrame(lobbyPreviewStep);
-}
-function stopLobbyPreview(){
-  lobbyPreviewRunning = false;
-  if(lobbyRaf) cancelAnimationFrame(lobbyRaf);
-}
-
-async function endRun(){
-  state.over=true; sHit(); stopMusic();
-  if(state.score>store.highScore) store.highScore=Math.floor(state.score);
-  saveLocal();
-  el('finalScore').textContent=Math.floor(state.score);
-  el('finalCoins').textContent=state.runCoins;
-  var title=t('gameOver');
-  if(currentUser){
-    missionProgress.plays = (missionProgress.plays||0)+1;
-    await saveMissions(); await pushUserDoc(); await submitScoreToLeaderboard(state.score);
-  }
-  if(state.mode==='solo' && state.bot){
-    el('soloResultWrap').classList.remove('hidden');
-    el('botNameLbl').textContent=state.bot.name; el('botFinalScore').textContent=Math.floor(state.bot.score);
-    var win = state.score>=state.bot.score;
-    title = win?t('win'):t('lose');
-    if(win) sWin(); else sLose2();
-  }
-  el('overTitle').textContent=title;
-  var reviveCost = REVIVE_BASE*Math.pow(5,state.reviveCount);
-  var reviveBtn = el('reviveBtn');
-  if(state.reviveCount>=REVIVE_MAX){ reviveBtn.classList.add('hidden'); }
-  else{
-    reviveBtn.classList.remove('hidden');
-    reviveBtn.textContent = (LANG==='vi'?'HỒI SINH (':'REVIVE (')+reviveCost+' 🪙)';
-    reviveBtn.classList.toggle('locked', store.coins<reviveCost);
-  }
-  el('overOverlay').classList.remove('hidden');
-}
-
-el('reviveBtn').addEventListener('click', function(){
-  if(!state||!state.over) return;
-  var cost = REVIVE_BASE*Math.pow(5,state.reviveCount);
-  if(state.reviveCount>=REVIVE_MAX){ alert(t('reviveMax')); return; }
-  if(store.coins<cost){ alert(t('reviveNo')); return; }
-  store.coins -= cost; saveLocal(); refreshCoinBadges();
-  state.reviveCount++;
-  state.lives = 1; state.invulnTimer=120;
-  // clear immediate danger ahead of the player
-  state.obstacles = state.obstacles.filter(function(o){ return o.x > state.player.x + 260; });
-  state.over=false; state.paused=false;
-  el('overOverlay').classList.add('hidden');
-  renderHearts(); renderBuffs();
-  if(state.mode==='solo') playTrack(SOLO_TRACK.bpm, SOLO_TRACK.m, SOLO_TRACK.b, SOLO_TRACK.d);
-  else playMusicPool(GAME_TRACKS);
-});
-
-el('playBtn').addEventListener('click', function(){ startGame('normal'); });
-el('soloBtn').addEventListener('click', function(){
-  if(!requireLogin()) return;
-  if(store.highScore<1000){ alert(t('needScore')+store.highScore+')'); return; }
-  showScreen('matchmaking');
-  var dots=0;
-  var dotTimer=setInterval(function(){ dots=(dots+1)%4; el('mmDots').textContent='.'.repeat(dots||1); },350);
-  var tmo=setTimeout(function(){ clearInterval(dotTimer); startGame('solo'); }, 1800+Math.random()*1400);
-  el('cancelMM').onclick=function(){ clearTimeout(tmo); clearInterval(dotTimer); showScreen('lobby'); };
-});
-function updateSoloBtnState(){ el('soloBtn').classList.toggle('locked', !currentUser || store.highScore<1000); }
-
-el('pauseBtn').addEventListener('click', function(){
-  if(!state||state.over||!state.running) return;
-  state.paused=true; el('pauseOverlay').classList.remove('hidden'); stopMusic();
-});
-el('resumeBtn').addEventListener('click', function(){
-  state.paused=false; el('pauseOverlay').classList.add('hidden');
-  if(state.mode==='solo') playTrack(SOLO_TRACK.bpm, SOLO_TRACK.m, SOLO_TRACK.b, SOLO_TRACK.d);
-  else playMusicPool(GAME_TRACKS);
-});
-el('exitBtn').addEventListener('click', function(){
-  state.running=false; state.paused=false; saveLocal(); if(currentUser) pushUserDoc();
-  el('pauseOverlay').classList.add('hidden'); refreshCoinBadges(); updateSoloBtnState(); showScreen('lobby'); playMusicPool(LOBBY_TRACKS);
-});
-el('retryBtn').addEventListener('click', function(){ startGame(state.mode); });
-el('menuBtn').addEventListener('click', function(){
-  state.running=false; saveLocal(); if(currentUser) pushUserDoc();
-  refreshCoinBadges(); updateSoloBtnState(); showScreen('lobby'); playMusicPool(LOBBY_TRACKS);
-});
-
-/* ---- article expand/collapse ---- */
-el('artToggle').addEventListener('click', function(){
-  var open = el('artFull').classList.toggle('hidden');
-  el('artToggle').setAttribute('data-i18n', open ? 'artMore' : 'artLess');
-  el('artToggle').textContent = t(open ? 'artMore' : 'artLess');
-});
-
-/* ============================================================
-   INIT
-============================================================ */
-applyI18n(); refreshCoinBadges(); updateMuteIcon(); updateSoloBtnState(); renderSkinGrid(); showScreen('lobby');
 })();
 </script>
 </body>
