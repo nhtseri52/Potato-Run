@@ -441,51 +441,68 @@ window.dispatchEvent(new Event('pr-firebase-ready'));
 
 /* ============================================================
 /* ============================================================
-   MONETAG DIRECT LINK REWARDED SYSTEM
+/* ============================================================
+   MONETAG REWARDED SYSTEM (OPTIMIZED FOR Vercel / HTML5 Games)
    ============================================================ */
 
-// 1. Thay link Direct Link lấy từ trang quản trị Monetag vào đây
-var MONETAG_DIRECT_LINK = 'https://5gvci.com/11944152'; // Đường link Direct Link của bạn
+// 1. Thay đường link Direct Link của Monetag vào đây
+var MONETAG_DIRECT_LINK = 'https://5gvci.com/11944152'; 
 
-function showMoneyTagRewarded(kind) {
-  return new Promise(function(resolve, reject) {
-    // Mở trang quảng cáo Monetag ở tab mới
-    var adWindow = window.open(MONETAG_DIRECT_LINK, '_blank');
-    
-    if (!adWindow) {
-      reject(new Error('Trình duyệt đã chặn cửa sổ bật lên (Pop-up blocked).'));
-      return;
-    }
+function showMoneyTagRewarded() {
+    return new Promise(function (resolve, reject) {
+        // Mở link ngay lập tức khi click để tránh trình duyệt chặn Pop-up
+        var adTab = window.open(MONETAG_DIRECT_LINK, '_blank');
 
-    // Yêu cầu người chơi chờ trong tab game (ví dụ: 10 giây)
-    var waitTime = 10; 
-    console.log('Đang chờ người chơi xem quảng cáo: ' + waitTime + 's');
+        if (!adTab) {
+            // Nếu vẫn bị chặn pop-up, chuyển hướng trực tiếp ở tab hiện tại
+            if (confirm("Vui lòng mở tab quảng cáo để nhận thưởng!")) {
+                window.location.href = MONETAG_DIRECT_LINK;
+            } else {
+                reject(new Error("Người dùng đã hủy xem quảng cáo."));
+                return;
+            }
+        }
 
-    var timer = setInterval(function() {
-      waitTime--;
-      if (waitTime <= 0) {
-        clearInterval(timer);
-        resolve(true); // Trả về thành công để cộng thưởng/hồi sinh
-      }
-    }, 1000);
-  });
-}
+        // Tạo giao diện thông báo đếm ngược nhỏ trong Game
+        var countdown = 8; // Số giây chờ (nên để ngắn 5-8s)
+        
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:99999;font-family:sans-serif;font-size:18px;text-align:center;padding:20px;';
+        overlay.innerHTML = '<h3>Đang kiểm tra phần thưởng...</h3><p>Vui lòng xem tab quảng cáo vừa mở trong <b id="ad-timer" style="color:#ffcc00;font-size:24px;">' + countdown + '</b> giây.</p>';
+        document.body.appendChild(overlay);
 
-// ============================================================
-// CÁCH GỌI TRONG GAME (Ví dụ khi người chơi bấm nút Hồi sinh):
-// ============================================================
-function onReviveButtonClick() {
-  showMoneyTagRewarded('revive')
-    .then(function() {
-      alert('Xác nhận thành công! Bạn đã được hồi sinh.');
-      // Thêm code hồi sinh nhân vật Potato tại đây:
-      // revivePlayer();
-    })
-    .catch(function(error) {
-      alert('Không thể nhận thưởng: ' + error.message);
+        var timer = setInterval(function () {
+            countdown--;
+            var timerEl = document.getElementById('ad-timer');
+            if (timerEl) timerEl.innerText = countdown;
+
+            if (countdown <= 0) {
+                clearInterval(timer);
+                if (document.body.contains(overlay)) {
+                    document.body.removeChild(overlay);
+                }
+                resolve(true); // Trả kết quả thành công để trao quà
+            }
+        }, 1000);
     });
 }
 
+// ============================================================
+// HÀM GỌI KHI BẤM NÚT TRONG GAME (Gắn vào nút Xem Quảng Cáo)
+// ============================================================
+function watchAdForRevive() {
+    showMoneyTagRewarded()
+        .then(function () {
+            // CỘNG THƯỞNG TẠI ĐÂY
+            alert("Chúc mừng! Bạn đã nhận được quà/hồi sinh.");
+            
+            // Thêm logic hồi sinh hoặc cộng xu của game bạn vào đây:
+            // if (typeof revivePlayer === "function") revivePlayer();
+        })
+        .catch(function (err) {
+            console.warn(err.message);
+        });
+}
 /* ============================================================
    I18N  (default: English)
 ============================================================ */
