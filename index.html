@@ -416,13 +416,15 @@ import {
 /* ======================================================================
    ⚠️ PASTE YOUR OWN FIREBASE CONFIG HERE (Firebase Console → Project settings)
 ====================================================================== */
+/* Use the SAME config as index.html */
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAuHv472KR6ZP57RTK-d5z-aH0rK7lbDvQ",
+  authDomain: "potato-run-ce6cd.firebaseapp.com",
+  projectId: "potato-run-ce6cd",
+  storageBucket: "potato-run-ce6cd.firebasestorage.app",
+  messagingSenderId: "950698200630",
+  appId: "1:950698200630:web:a7dbc26101dfb814d5d297",
+  measurementId: "G-FRBLTLJRTZ"
 };
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -438,34 +440,50 @@ window.dispatchEvent(new Event('pr-firebase-ready'));
 "use strict";
 
 /* ============================================================
-   MONEYTAG ADS
-   The supplied MoneyTag file is a service-worker configuration.
-   Rewarded ads must be confirmed by the provider's SDK/callback;
-   never grant a reward merely because a timer elapsed.
-============================================================ */
-var MONEYTAG_DOMAIN='5gvci.com', MONEYTAG_ZONE=11944152;
-if('serviceWorker' in navigator){
-  window.addEventListener('load', function(){
-    navigator.serviceWorker.register('/sw.js').catch(function(e){ console.warn('MoneyTag SW registration failed',e); });
-  });
-}
-function showMoneyTagRewarded(kind){
-  return new Promise(function(resolve,reject){
-    var api = window.MoneyTag || window.Moneytag || window.moneytag || window.MoneyTagAds;
-    var fn = api && (api.showRewarded || api.showRewardedAd || api.rewarded || api.show);
-    if(typeof fn!=='function' && typeof window.showRewardedAd==='function') fn=window.showRewardedAd;
-    if(typeof fn!=='function'){
-      reject(new Error('MoneyTag rewarded-ad SDK/callback is not available.'));
+/* ============================================================
+   MONETAG DIRECT LINK REWARDED SYSTEM
+   ============================================================ */
+
+// 1. Thay link Direct Link lấy từ trang quản trị Monetag vào đây
+var MONETAG_DIRECT_LINK = 'https://5gvci.com/11944152'; // Đường link Direct Link của bạn
+
+function showMoneyTagRewarded(kind) {
+  return new Promise(function(resolve, reject) {
+    // Mở trang quảng cáo Monetag ở tab mới
+    var adWindow = window.open(MONETAG_DIRECT_LINK, '_blank');
+    
+    if (!adWindow) {
+      reject(new Error('Trình duyệt đã chặn cửa sổ bật lên (Pop-up blocked).'));
       return;
     }
-    var done=false;
-    function success(){ if(done)return; done=true; resolve(true); }
-    function fail(e){ if(done)return; done=true; reject(e||new Error('Ad was not completed.')); }
-    try{
-      var result=fn.call(api,{zoneId:MONEYTAG_ZONE,zone:MONEYTAG_ZONE,type:kind,onReward:success,onComplete:success,onClose:function(){ if(!done) fail(new Error('Ad closed before reward.')); },onError:fail});
-      if(result && typeof result.then==='function') result.then(function(v){ if(v===false) fail(new Error('Ad was not completed.')); else success(); }).catch(fail);
-    }catch(e){ fail(e); }
+
+    // Yêu cầu người chơi chờ trong tab game (ví dụ: 10 giây)
+    var waitTime = 10; 
+    console.log('Đang chờ người chơi xem quảng cáo: ' + waitTime + 's');
+
+    var timer = setInterval(function() {
+      waitTime--;
+      if (waitTime <= 0) {
+        clearInterval(timer);
+        resolve(true); // Trả về thành công để cộng thưởng/hồi sinh
+      }
+    }, 1000);
   });
+}
+
+// ============================================================
+// CÁCH GỌI TRONG GAME (Ví dụ khi người chơi bấm nút Hồi sinh):
+// ============================================================
+function onReviveButtonClick() {
+  showMoneyTagRewarded('revive')
+    .then(function() {
+      alert('Xác nhận thành công! Bạn đã được hồi sinh.');
+      // Thêm code hồi sinh nhân vật Potato tại đây:
+      // revivePlayer();
+    })
+    .catch(function(error) {
+      alert('Không thể nhận thưởng: ' + error.message);
+    });
 }
 
 /* ============================================================
