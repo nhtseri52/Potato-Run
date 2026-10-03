@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Potato Run</title>
 <meta name="description" content="Potato Run - free browser endless runner. Double jump, mystery blocks, lives, coins, 14 skins, weekly leaderboard.">
+<meta name="monetag" content="38c3262021b27b377ee1bb238cee439a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -282,8 +283,6 @@
           <div class="stat" data-i18n-prefix="score">Score: <b id="finalScore">0</b></div>
           <div class="stat" data-i18n-prefix="coinsGained">Coins gained: <b id="finalCoins">0</b></div>
           <div class="stat hidden" id="soloResultWrap">Opponent (<span id="botNameLbl"></span>): <b id="botFinalScore">0</b></div>
-          <button class="btn small" id="reviveAdBtn">📺 XEM QC ĐỂ HỒI SINH</button>
-          <button class="btn small" id="coinAdBtn">📺 XEM QC +50 COIN <span id="coinAdCount">(0/5)</span></button>
           <button class="btn small" id="reviveBtn" data-i18n="revive">REVIVE (100 🪙)</button>
           <button class="btn small" id="retryBtn" data-i18n="retry">RETRY</button>
           <button class="btn secondary small" id="menuBtn" data-i18n="menu">MENU</button>
@@ -416,15 +415,13 @@ import {
 /* ======================================================================
    ⚠️ PASTE YOUR OWN FIREBASE CONFIG HERE (Firebase Console → Project settings)
 ====================================================================== */
-/* Use the SAME config as index.html */
 const firebaseConfig = {
-  apiKey: "AIzaSyAuHv472KR6ZP57RTK-d5z-aH0rK7lbDvQ",
-  authDomain: "potato-run-ce6cd.firebaseapp.com",
-  projectId: "potato-run-ce6cd",
-  storageBucket: "potato-run-ce6cd.firebasestorage.app",
-  messagingSenderId: "950698200630",
-  appId: "1:950698200630:web:a7dbc26101dfb814d5d297",
-  measurementId: "G-FRBLTLJRTZ"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -439,54 +436,6 @@ window.dispatchEvent(new Event('pr-firebase-ready'));
 (function(){
 "use strict";
 
-/* ============================================================
-   MONEYTAG ADS
-   The supplied MoneyTag file is a service-worker configuration.
-   Rewarded ads must be confirmed by the provider's SDK/callback;
-   never grant a reward merely because a timer elapsed.
-============================================================ */
-  <head>
-<meta name="monetag" content="38c3262021b27b377ee1bb238cee439a">
-if('serviceWorker' in navigator){
-  window.addEventListener('load', function(){
-    navigator.serviceWorker.register('/sw.js').catch(function(e){ console.warn('MoneTag SW registration failed',e); });
-  });
-}
-function showMoneTagRewarded(kind){
-  return new Promise(function(resolve,reject){
-    var api = window.MoneTag || window.Monetag || window.moneytag || window.MoneTagAds;
-    var fn = api && (api.showRewarded || api.showRewardedAd || api.rewarded || api.show);
-    if(typeof fn!=='function' && typeof window.showRewardedAd==='function') fn=window.showRewardedAd;
-    if(typeof fn!=='function'){
-      reject(new Error('MoneTag rewarded-ad SDK/callback is not available.'));
-      return;
-    }
-    var done=false;
-    function success(){ if(done)return; done=true; resolve(true); }
-    function fail(e){ if(done)return; done=true; reject(e||new Error('Ad was not completed.')); }
-    try{
-      var result=fn.call(api,{zoneId:MONETAG_ZONE,zone:MONETAG_ZONE,type:kind,onReward:success,onComplete:success,onClose:function(){ if(!done) fail(new Error('Ad closed before reward.')); },onError:fail});
-      if(result && typeof result.then==='function') result.then(function(v){ if(v===false) fail(new Error('Ad was not completed.')); else success(); }).catch(fail);
-    }catch(e){ fail(e); }
-  });
-}
-
-// ============================================================
-// HÀM GỌI KHI BẤM NÚT TRONG GAME (Gắn vào nút Xem Quảng Cáo)
-// ============================================================
-function watchAdForRevive() {
-    showMoneyTagRewarded()
-        .then(function () {
-            // CỘNG THƯỞNG TẠI ĐÂY
-            alert("Chúc mừng! Bạn đã nhận được quà/hồi sinh.");
-            
-            // Thêm logic hồi sinh hoặc cộng xu của game bạn vào đây:
-            // if (typeof revivePlayer === "function") revivePlayer();
-        })
-        .catch(function (err) {
-            console.warn(err.message);
-        });
-}
 /* ============================================================
    I18N  (default: English)
 ============================================================ */
@@ -1030,7 +979,10 @@ var W=0,H=0,GROUND=0;
 function resize(){
   var r=el('gameWrap').getBoundingClientRect();
   if(r.width<10||r.height<10) return;
-  W=canvas.width=Math.round(r.width); H=canvas.height=Math.round(r.height); GROUND=H*0.78;
+  // Render the scene on a slightly larger internal canvas so the browser scales it down,
+  // making the potato and obstacles feel smaller and easier to see at once.
+  var RENDER_SCALE=1.10;
+  W=canvas.width=Math.round(r.width*RENDER_SCALE); H=canvas.height=Math.round(r.height*RENDER_SCALE); GROUND=H*0.78;
   if(state&&state.player) state.player.y = Math.min(state.player.y, GROUND-state.player.h);
 }
 window.addEventListener('resize', resize);
@@ -1145,7 +1097,7 @@ function startGame(mode, matchId){
   showScreen('game'); resize();
   state = newState(mode);
   if(mode==='solo' && matchId) state.matchId=matchId; state.player.y = GROUND-state.player.h;
-  el('overOverlay').classList.add('hidden'); el('pauseOverlay').classList.add('hidden'); el('reviveAdBtn').classList.add('hidden'); el('coinAdBtn').classList.add('hidden');
+  el('overOverlay').classList.add('hidden'); el('pauseOverlay').classList.add('hidden');
   el('soloResultWrap').classList.add('hidden'); el('botHud').classList.toggle('hidden', mode!=='solo');
   if(mode==='solo'){
     el('botScoreLbl').textContent='👤 Đang kết nối...';
@@ -1509,48 +1461,6 @@ function stopLobbyPreview(){
   if(lobbyRaf) cancelAnimationFrame(lobbyRaf);
 }
 
-function moneyTagDayKey(){
-  var d=vnNow();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-function getAdCoinState(){
-  var key=moneyTagDayKey(), raw=null;
-  try{ raw=JSON.parse(localStorage.getItem('potatorun_monetag_daily')||'null'); }catch(e){}
-  if(!raw || raw.day!==key) raw={day:key,coins:0};
-  raw.coins=Math.max(0,Math.min(5,Number(raw.coins)||0));
-  return raw;
-}
-function saveAdCoinState(x){ try{ localStorage.setItem('potatorun_monetag_daily',JSON.stringify(x)); }catch(e){} }
-function refreshAdRewardButtons(){
-  var st=getAdCoinState(), coinBtn=el('coinAdBtn'), count=el('coinAdCount'), reviveBtn=el('reviveAdBtn');
-  if(count) count.textContent='('+st.coins+'/5)';
-  if(coinBtn){ coinBtn.classList.toggle('locked',st.coins>=5); coinBtn.disabled=st.coins>=5; }
-  if(reviveBtn){ var can=!!state && state.mode!=='solo' && !state.adReviveUsed; reviveBtn.classList.toggle('hidden',!can); reviveBtn.disabled=!can; }
-}
-async function rewardAdRevive(){
-  if(!state || !state.over || state.mode==='solo' || state.adReviveUsed) return;
-  var btn=el('reviveAdBtn'); btn.disabled=true; btn.textContent='📺 ĐANG TẢI QUẢNG CÁO...';
-  try{
-    await showMoneyTagRewarded('revive');
-    state.adReviveUsed=true; state.lives=1; state.invulnTimer=120; state.over=false; state.paused=false;
-    state.obstacles=state.obstacles.filter(function(o){return o.x>state.player.x+260;});
-    el('overOverlay').classList.add('hidden'); renderHearts(); renderBuffs(); playMusicPool(GAME_TRACKS);
-  }catch(e){ alert('Quảng cáo chưa hoàn tất hoặc MoneyTag chưa kết nối rewarded ad.'); }
-  btn.textContent='📺 XEM QC ĐỂ HỒI SINH'; refreshAdRewardButtons();
-}
-async function rewardAdCoins(){
-  var st=getAdCoinState(); if(st.coins>=5) return;
-  var btn=el('coinAdBtn'); btn.disabled=true; btn.textContent='📺 ĐANG TẢI QUẢNG CÁO...';
-  try{
-    await showMoneyTagRewarded('coins50');
-    st=getAdCoinState(); if(st.coins<5){ st.coins++; saveAdCoinState(st); store.coins+=50; saveLocal(); refreshCoinBadges(); if(currentUser) await pushUserDoc(); alert('+50 coin!'); }
-  }catch(e){ alert('Quảng cáo chưa hoàn tất hoặc MoneyTag chưa kết nối rewarded ad.'); }
-  btn.textContent='📺 XEM QC +50 COIN'; refreshAdRewardButtons();
-}
-
-el('reviveAdBtn').addEventListener('click',rewardAdRevive);
-el('coinAdBtn').addEventListener('click',rewardAdCoins);
-
 async function endRun(){
   if(!state || state.over) return;
   state.over=true; sHit(); stopMusic();
@@ -1570,15 +1480,11 @@ async function endRun(){
     el('botNameLbl').textContent=state.opponentName||'Player';
     el('botFinalScore').textContent=Math.floor(state.opponentScore||0);
     el('reviveBtn').classList.add('hidden');
-    el('reviveAdBtn').classList.add('hidden');
-    el('coinAdBtn').classList.remove('hidden');
-    refreshAdRewardButtons();
     el('overOverlay').classList.remove('hidden');
     if(state.opponentUid && state.opponentScore!==undefined && state.opponentAlive===false) await finalizePvpResult();
     return;
   }
   el('overTitle').textContent=title;
-  refreshAdRewardButtons();
   var reviveCost = REVIVE_BASE*Math.pow(5,state.reviveCount);
   var reviveBtn = el('reviveBtn');
   if(state.mode==='solo'){
@@ -1697,7 +1603,6 @@ el('exitBtn').addEventListener('click', function(){
   el('pauseOverlay').classList.add('hidden'); refreshCoinBadges(); updateSoloBtnState(); showScreen('lobby'); playMusicPool(LOBBY_TRACKS);
 });
 el('retryBtn').addEventListener('click', function(){ if(state.mode==='solo') startSoloMatchmaking(); else startGame('normal'); });
-refreshAdRewardButtons();
 el('menuBtn').addEventListener('click', function(){
   state.running=false; cleanupPvp(); saveLocal(); if(currentUser) pushUserDoc();
   refreshCoinBadges(); updateSoloBtnState(); showScreen('lobby'); playMusicPool(LOBBY_TRACKS);
