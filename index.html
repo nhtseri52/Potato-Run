@@ -445,26 +445,27 @@ window.dispatchEvent(new Event('pr-firebase-ready'));
    Rewarded ads must be confirmed by the provider's SDK/callback;
    never grant a reward merely because a timer elapsed.
 ============================================================ */
-var MONEYTAG_DOMAIN='5gvci.com', MONEYTAG_ZONE=11944152;
+  <head>
+var MONETAG_DOMAIN='5gvci.com', MONETAG_ZONE=11944152;
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){
-    navigator.serviceWorker.register('/sw.js').catch(function(e){ console.warn('MoneyTag SW registration failed',e); });
+    navigator.serviceWorker.register('/sw.js').catch(function(e){ console.warn('MoneTag SW registration failed',e); });
   });
 }
-function showMoneyTagRewarded(kind){
+function showMoneTagRewarded(kind){
   return new Promise(function(resolve,reject){
-    var api = window.MoneyTag || window.Moneytag || window.moneytag || window.MoneyTagAds;
+    var api = window.MoneTag || window.Monetag || window.moneytag || window.MoneTagAds;
     var fn = api && (api.showRewarded || api.showRewardedAd || api.rewarded || api.show);
     if(typeof fn!=='function' && typeof window.showRewardedAd==='function') fn=window.showRewardedAd;
     if(typeof fn!=='function'){
-      reject(new Error('MoneyTag rewarded-ad SDK/callback is not available.'));
+      reject(new Error('MoneTag rewarded-ad SDK/callback is not available.'));
       return;
     }
     var done=false;
     function success(){ if(done)return; done=true; resolve(true); }
     function fail(e){ if(done)return; done=true; reject(e||new Error('Ad was not completed.')); }
     try{
-      var result=fn.call(api,{zoneId:MONEYTAG_ZONE,zone:MONEYTAG_ZONE,type:kind,onReward:success,onComplete:success,onClose:function(){ if(!done) fail(new Error('Ad closed before reward.')); },onError:fail});
+      var result=fn.call(api,{zoneId:MONETAG_ZONE,zone:MONETAG_ZONE,type:kind,onReward:success,onComplete:success,onClose:function(){ if(!done) fail(new Error('Ad closed before reward.')); },onError:fail});
       if(result && typeof result.then==='function') result.then(function(v){ if(v===false) fail(new Error('Ad was not completed.')); else success(); }).catch(fail);
     }catch(e){ fail(e); }
   });
