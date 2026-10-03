@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Potato Run</title>
 <meta name="description" content="Potato Run - free browser endless runner. Double jump, mystery blocks, lives, coins, 14 skins, weekly leaderboard.">
-<meta name="google-adsense-account" content="ca-pub-2159939441444456">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2159939441444456" crossorigin="anonymous"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -151,7 +149,36 @@
   .tab-row button{flex:1; padding:8px; font-size:10px; border-radius:5px; border:1px solid var(--line); background:var(--panel2); color:var(--cream-dim); cursor:pointer;}
   .tab-row button.active{background:var(--gold); color:#241a10; border-color:var(--gold);}
 
-  @media (max-width:520px){ .btn{padding:11px 14px; font-size:9px;} #lobby .logo{font-size:18px;} }
+  /* Mobile / tablet support */
+  #canvas{touch-action:none; -webkit-user-select:none; user-select:none;}
+  button,.icon-btn,#pauseBtn{touch-action:manipulation; -webkit-tap-highlight-color:transparent;}
+  @media (max-width:700px){
+    .site-header{padding:10px 8px 4px;}
+    .site-header p{font-size:11px;}
+    #stage-wrap{padding:0 6px;}
+    #app{aspect-ratio:auto;height:calc(100dvh - 112px);min-height:500px;max-height:900px;border-width:3px;}
+    .screen{gap:10px;padding:12px 10px;}
+    .btn{min-height:42px;padding:12px 14px;font-size:9px;}
+    .btn.small{min-height:38px;padding:10px 12px;font-size:8px;}
+    #lobby .logo{font-size:clamp(16px,5vw,22px);}
+    .top-badges{top:6px;left:6px;right:6px;}
+    .badge{font-size:8px;padding:5px 7px;}
+    #hud .pill{font-size:8px;padding:7px 8px;}
+    #hearts span{font-size:12px;}
+    #buffHud{top:34px;flex-wrap:wrap;}
+    #botHud{top:62px;left:6px;}
+    .modal-box{padding:16px;}
+  }
+  @media (max-width:390px){
+    #app{height:calc(100dvh - 105px);min-height:460px;}
+    .row{gap:7px;}
+    .btn{padding:10px 11px;font-size:8px;}
+    #hud{padding:0 5px;}
+  }
+  @media (orientation:landscape) and (max-height:520px){
+    #app{height:calc(100dvh - 75px);min-height:300px;aspect-ratio:auto;}
+    .site-header{padding:5px;}
+  }
 </style>
 </head>
 <body>
@@ -224,7 +251,9 @@
     <!-- MATCHMAKING -->
     <div id="matchmaking" class="screen hidden">
       <h2 style="font-family:var(--pixel); font-size:13px; color:var(--gold);" data-i18n="finding">FINDING OPPONENT...</h2>
-      <div class="hint" id="mmDots">.</div>
+      <div class="hint" id="mmStatus">Đang tìm người chơi thật...</div>
+      <div class="hint" id="mmDots">Đã đợi: 00:00</div>
+      <div class="hint" id="mmEstimate">Thời gian ước tính: 20–60 giây</div>
       <button class="btn secondary small" id="cancelMM" data-i18n="cancel">CANCEL</button>
     </div>
 
@@ -253,6 +282,8 @@
           <div class="stat" data-i18n-prefix="score">Score: <b id="finalScore">0</b></div>
           <div class="stat" data-i18n-prefix="coinsGained">Coins gained: <b id="finalCoins">0</b></div>
           <div class="stat hidden" id="soloResultWrap">Opponent (<span id="botNameLbl"></span>): <b id="botFinalScore">0</b></div>
+          <button class="btn small" id="reviveAdBtn">📺 XEM QC ĐỂ HỒI SINH</button>
+          <button class="btn small" id="coinAdBtn">📺 XEM QC +50 COIN <span id="coinAdCount">(0/5)</span></button>
           <button class="btn small" id="reviveBtn" data-i18n="revive">REVIVE (100 🪙)</button>
           <button class="btn small" id="retryBtn" data-i18n="retry">RETRY</button>
           <button class="btn secondary small" id="menuBtn" data-i18n="menu">MENU</button>
@@ -262,12 +293,7 @@
   </div>
 </div>
 
-<div class="ad-slot">
-  <div class="ad-label">ADVERTISEMENT</div>
-  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2159939441444456"
-    data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
-</div>
-<script>try{(adsbygoogle=window.adsbygoogle||[]).push({});}catch(e){}</script>
+
 
 <main class="article">
   <ul class="art-summary">
@@ -318,7 +344,7 @@
 <div class="modal-back" id="modalPrivacy"><div class="modal-box">
   <button class="modal-close" data-close>×</button>
   <h3 data-i18n="privacy">Privacy Policy</h3>
-  <p data-i18n="privacyTxt">We store your display name and email (for login) and gameplay data (coins, scores, skins). Passwords are handled entirely by Firebase Authentication and never seen by us in plain text. Google AdSense may use cookies to personalize ads.</p>
+  <p data-i18n="privacyTxt">We store your display name and email (for login) and gameplay data (coins, scores, skins). Passwords are handled entirely by Firebase Authentication and never seen by us in plain text. Advertising may use cookies or similar technologies to provide monetized game content.</p>
 </div></div>
 
 <!-- AUTH MODAL -->
@@ -390,15 +416,13 @@ import {
 /* ======================================================================
    ⚠️ PASTE YOUR OWN FIREBASE CONFIG HERE (Firebase Console → Project settings)
 ====================================================================== */
-/* Use the SAME config as index.html */
 const firebaseConfig = {
-  apiKey: "AIzaSyAuHv472KR6ZP57RTK-d5z-aH0rK7lbDvQ",
-  authDomain: "potato-run-ce6cd.firebaseapp.com",
-  projectId: "potato-run-ce6cd",
-  storageBucket: "potato-run-ce6cd.firebasestorage.app",
-  messagingSenderId: "950698200630",
-  appId: "1:950698200630:web:a7dbc26101dfb814d5d297",
-  measurementId: "G-FRBLTLJRTZ"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -412,6 +436,37 @@ window.dispatchEvent(new Event('pr-firebase-ready'));
 <script>
 (function(){
 "use strict";
+
+/* ============================================================
+   MONEYTAG ADS
+   The supplied MoneyTag file is a service-worker configuration.
+   Rewarded ads must be confirmed by the provider's SDK/callback;
+   never grant a reward merely because a timer elapsed.
+============================================================ */
+var MONEYTAG_DOMAIN='5gvci.com', MONEYTAG_ZONE=11944152;
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(e){ console.warn('MoneyTag SW registration failed',e); });
+  });
+}
+function showMoneyTagRewarded(kind){
+  return new Promise(function(resolve,reject){
+    var api = window.MoneyTag || window.Moneytag || window.moneytag || window.MoneyTagAds;
+    var fn = api && (api.showRewarded || api.showRewardedAd || api.rewarded || api.show);
+    if(typeof fn!=='function' && typeof window.showRewardedAd==='function') fn=window.showRewardedAd;
+    if(typeof fn!=='function'){
+      reject(new Error('MoneyTag rewarded-ad SDK/callback is not available.'));
+      return;
+    }
+    var done=false;
+    function success(){ if(done)return; done=true; resolve(true); }
+    function fail(e){ if(done)return; done=true; reject(e||new Error('Ad was not completed.')); }
+    try{
+      var result=fn.call(api,{zoneId:MONEYTAG_ZONE,zone:MONEYTAG_ZONE,type:kind,onReward:success,onComplete:success,onClose:function(){ if(!done) fail(new Error('Ad closed before reward.')); },onError:fail});
+      if(result && typeof result.then==='function') result.then(function(v){ if(v===false) fail(new Error('Ad was not completed.')); else success(); }).catch(fail);
+    }catch(e){ fail(e); }
+  });
+}
 
 /* ============================================================
    I18N  (default: English)
@@ -432,7 +487,7 @@ var I18N = {
     artHow4:'Mystery blocks give random rewards: bonus coins, an extra heart, a shield that clears nearby hazards, a 2x score boost, or (rarely) a heart loss — so approach them carefully!',
     artAccount:'ACCOUNT & PROGRESS', artAccountTxt:'Playing without an account still saves your coins locally. Log in anytime and your existing coins and high score are merged into your account automatically. An account is required for Leaderboard, Daily Missions and Potato Solo.',
     aboutUs:'About Us', contactUs:'Contact Us', privacy:'Privacy Policy', aboutTxt:'Potato Run is a small independent game project built by fans of classic endless runners, playable free in any browser.',
-    contactTxt:'Questions, bug reports or feedback:', privacyTxt:'We store your display name and email (for login) and gameplay data (coins, scores, skins). Passwords are handled entirely by Firebase Authentication. Google AdSense may use cookies to personalize ads.',
+    contactTxt:'Questions, bug reports or feedback:', privacyTxt:'We store your display name and email (for login) and gameplay data (coins, scores, skins). Passwords are handled entirely by Firebase Authentication. Advertising may use cookies or similar technologies to provide monetized game content.',
     login:'LOG IN', register:'REGISTER', forgot:'Forgot password?', emailLbl:'Gmail / Email', passLbl:'Password',
     nameLbl:'Display Name (changeable)', confirmLbl:'Confirm Password',
     sendReset:'SEND RESET LINK', profile:'Profile', guestTxt:"You're playing as guest. Log in to save progress online and unlock Leaderboard & Potato Solo.",
@@ -461,7 +516,7 @@ var I18N = {
     artHow4:'Khối bí ẩn cho thưởng ngẫu nhiên: cộng coin, thêm tim, khiên phá hủy chướng ngại gần đó, x2 điểm, hoặc (hiếm khi) mất 1 tim — cẩn thận khi chạm vào!',
     artAccount:'TÀI KHOẢN & TIẾN TRÌNH', artAccountTxt:'Chơi không đăng nhập vẫn lưu coin trên máy. Đăng nhập bất cứ lúc nào, coin và điểm cao hiện có sẽ tự động gộp vào tài khoản. Cần tài khoản để dùng Bảng xếp hạng, Nhiệm vụ ngày và Potato Solo.',
     aboutUs:'Về chúng tôi', contactUs:'Liên hệ', privacy:'Chính sách', aboutTxt:'Potato Run là dự án game nhỏ độc lập, chơi miễn phí trên mọi trình duyệt.',
-    contactTxt:'Mọi câu hỏi, báo lỗi hoặc góp ý:', privacyTxt:'Chúng tôi lưu tên hiển thị và email (để đăng nhập) cùng dữ liệu chơi game. Mật khẩu do Firebase Authentication xử lý hoàn toàn. Google AdSense có thể dùng cookie để cá nhân hóa quảng cáo.',
+    contactTxt:'Mọi câu hỏi, báo lỗi hoặc góp ý:', privacyTxt:'Chúng tôi lưu tên hiển thị và email (để đăng nhập) cùng dữ liệu chơi game. Mật khẩu do Firebase Authentication xử lý hoàn toàn. Quảng cáo có thể dùng cookie hoặc công nghệ tương tự để hiển thị quảng cáo và kiếm doanh thu cho game.',
     login:'ĐĂNG NHẬP', register:'ĐĂNG KÝ', forgot:'Quên mật khẩu?', emailLbl:'Gmail / Email', passLbl:'Mật khẩu',
     nameLbl:'Tên hiển thị (đổi được)', confirmLbl:'Nhập lại mật khẩu',
     sendReset:'GỬI LINK ĐẶT LẠI', profile:'Hồ sơ', guestTxt:'Bạn đang chơi ở chế độ khách. Đăng nhập để lưu tiến trình online.',
@@ -970,7 +1025,7 @@ var REVIVE_MAX=3, REVIVE_BASE=100;
 function newState(mode){
   return { mode:mode||'normal', running:false, paused:false, over:false,
     t:0, speed:6.4, score:0, runCoins:0, lastMilestone:0, lives:1, invulnTimer:0,
-    shieldActive:false, shieldTimer:0, x2Active:false, x2Timer:0, reviveCount:0,
+    shieldActive:false, shieldTimer:0, x2Active:false, x2Timer:0, reviveCount:0, adReviveUsed:false,
     player:{ x:70, y:0, vy:0, w:44, h:44, onGround:true, jumps:0, rot:0, runPhase:0 },
     obstacles:[], coins:[], mysteries:[], particles:[],
     spawnTimer:0, nextSpawn:60, coinTimer:0, nextCoin:70, mysteryTimer:0, nextMystery:520, bot:null, matchId:null, opponentUid:null, opponentName:null, opponentScore:0, opponentAlive:true, pvpUnsub:null, pvpQueueUnsub:null, lastPvpSync:0, pvpFinished:false };
@@ -1024,6 +1079,11 @@ function watchPvpQueue(qref){
   state.pvpQueueUnsub=FB.onSnapshot(qref,function(docSnap){
     var d=docSnap.data()||{};
     if(d.matchId){
+      if(soloDotsTimer) clearInterval(soloDotsTimer);
+      if(soloSearchTimer) clearInterval(soloSearchTimer);
+      if(soloMatchTimer) clearTimeout(soloMatchTimer);
+      soloDotsTimer=null; soloSearchTimer=null; soloMatchTimer=null;
+      var status=el('mmStatus'); if(status) status.textContent='Đã tìm thấy đối thủ! Đang vào trận...';
       startGame('solo', d.matchId);
     }
   });
@@ -1066,7 +1126,7 @@ function startGame(mode, matchId){
   showScreen('game'); resize();
   state = newState(mode);
   if(mode==='solo' && matchId) state.matchId=matchId; state.player.y = GROUND-state.player.h;
-  el('overOverlay').classList.add('hidden'); el('pauseOverlay').classList.add('hidden');
+  el('overOverlay').classList.add('hidden'); el('pauseOverlay').classList.add('hidden'); el('reviveAdBtn').classList.add('hidden'); el('coinAdBtn').classList.add('hidden');
   el('soloResultWrap').classList.add('hidden'); el('botHud').classList.toggle('hidden', mode!=='solo');
   if(mode==='solo'){
     el('botScoreLbl').textContent='👤 Đang kết nối...';
@@ -1430,6 +1490,48 @@ function stopLobbyPreview(){
   if(lobbyRaf) cancelAnimationFrame(lobbyRaf);
 }
 
+function moneyTagDayKey(){
+  var d=vnNow();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function getAdCoinState(){
+  var key=moneyTagDayKey(), raw=null;
+  try{ raw=JSON.parse(localStorage.getItem('potatorun_monetag_daily')||'null'); }catch(e){}
+  if(!raw || raw.day!==key) raw={day:key,coins:0};
+  raw.coins=Math.max(0,Math.min(5,Number(raw.coins)||0));
+  return raw;
+}
+function saveAdCoinState(x){ try{ localStorage.setItem('potatorun_monetag_daily',JSON.stringify(x)); }catch(e){} }
+function refreshAdRewardButtons(){
+  var st=getAdCoinState(), coinBtn=el('coinAdBtn'), count=el('coinAdCount'), reviveBtn=el('reviveAdBtn');
+  if(count) count.textContent='('+st.coins+'/5)';
+  if(coinBtn){ coinBtn.classList.toggle('locked',st.coins>=5); coinBtn.disabled=st.coins>=5; }
+  if(reviveBtn){ var can=!!state && state.mode!=='solo' && !state.adReviveUsed; reviveBtn.classList.toggle('hidden',!can); reviveBtn.disabled=!can; }
+}
+async function rewardAdRevive(){
+  if(!state || !state.over || state.mode==='solo' || state.adReviveUsed) return;
+  var btn=el('reviveAdBtn'); btn.disabled=true; btn.textContent='📺 ĐANG TẢI QUẢNG CÁO...';
+  try{
+    await showMoneyTagRewarded('revive');
+    state.adReviveUsed=true; state.lives=1; state.invulnTimer=120; state.over=false; state.paused=false;
+    state.obstacles=state.obstacles.filter(function(o){return o.x>state.player.x+260;});
+    el('overOverlay').classList.add('hidden'); renderHearts(); renderBuffs(); playMusicPool(GAME_TRACKS);
+  }catch(e){ alert('Quảng cáo chưa hoàn tất hoặc MoneyTag chưa kết nối rewarded ad.'); }
+  btn.textContent='📺 XEM QC ĐỂ HỒI SINH'; refreshAdRewardButtons();
+}
+async function rewardAdCoins(){
+  var st=getAdCoinState(); if(st.coins>=5) return;
+  var btn=el('coinAdBtn'); btn.disabled=true; btn.textContent='📺 ĐANG TẢI QUẢNG CÁO...';
+  try{
+    await showMoneyTagRewarded('coins50');
+    st=getAdCoinState(); if(st.coins<5){ st.coins++; saveAdCoinState(st); store.coins+=50; saveLocal(); refreshCoinBadges(); if(currentUser) await pushUserDoc(); alert('+50 coin!'); }
+  }catch(e){ alert('Quảng cáo chưa hoàn tất hoặc MoneyTag chưa kết nối rewarded ad.'); }
+  btn.textContent='📺 XEM QC +50 COIN'; refreshAdRewardButtons();
+}
+
+el('reviveAdBtn').addEventListener('click',rewardAdRevive);
+el('coinAdBtn').addEventListener('click',rewardAdCoins);
+
 async function endRun(){
   if(!state || state.over) return;
   state.over=true; sHit(); stopMusic();
@@ -1449,11 +1551,15 @@ async function endRun(){
     el('botNameLbl').textContent=state.opponentName||'Player';
     el('botFinalScore').textContent=Math.floor(state.opponentScore||0);
     el('reviveBtn').classList.add('hidden');
+    el('reviveAdBtn').classList.add('hidden');
+    el('coinAdBtn').classList.remove('hidden');
+    refreshAdRewardButtons();
     el('overOverlay').classList.remove('hidden');
     if(state.opponentUid && state.opponentScore!==undefined && state.opponentAlive===false) await finalizePvpResult();
     return;
   }
   el('overTitle').textContent=title;
+  refreshAdRewardButtons();
   var reviveCost = REVIVE_BASE*Math.pow(5,state.reviveCount);
   var reviveBtn = el('reviveBtn');
   if(state.mode==='solo'){
@@ -1485,32 +1591,69 @@ el('reviveBtn').addEventListener('click', function(){
 });
 
 el('playBtn').addEventListener('click', function(){ startGame('normal'); });
-var soloMatchTimer=null, soloDotsTimer=null;
+var soloMatchTimer=null, soloDotsTimer=null, soloSearchTimer=null, soloQueueRef=null;
+function formatMMTime(seconds){
+  seconds=Math.max(0,Math.floor(seconds));
+  var m=Math.floor(seconds/60), s=seconds%60;
+  return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+}
 function startSoloMatchmaking(){
   if(!pvpReady()){ alert('Firebase chưa được cấu hình cho đấu online. Hãy điền Firebase config và mở quyền Firestore.'); return; }
   showScreen('matchmaking');
-  var remaining=20,dots=0, qref=null, cancelled=false;
-  el('mmDots').textContent='20s';
-  if(soloDotsTimer) clearInterval(soloDotsTimer); if(soloMatchTimer) clearTimeout(soloMatchTimer);
+  var started=Date.now(), dots=0, cancelled=false, searching=false;
+  var status=el('mmStatus'), elapsed=el('mmDots'), estimate=el('mmEstimate');
+  status.textContent='Đang tìm người chơi thật...';
+  elapsed.textContent='Đã đợi: 00:00';
+  estimate.textContent='Thời gian ước tính: 20–60 giây (tùy số người đang tìm trận)';
+  if(soloDotsTimer) clearInterval(soloDotsTimer);
+  if(soloMatchTimer) clearTimeout(soloMatchTimer);
+  if(soloSearchTimer) clearInterval(soloSearchTimer);
+  if(soloQueueRef && FB) FB.deleteDoc(soloQueueRef).catch(function(){});
+  soloQueueRef=null;
   (async function(){
     try{
-      qref=await joinPvpQueue();
-      if(cancelled) return;
+      var qref=await joinPvpQueue();
+      soloQueueRef=qref;
+      if(cancelled){ FB.deleteDoc(qref).catch(function(){}); return; }
       watchPvpQueue(qref);
-      var immediate=await tryFindPvpMatch();
-      if(immediate){ showScreen('matchmaking'); }
-    }catch(e){ alert('Không thể vào phòng đấu: '+(e.message||e)); showScreen('lobby'); }
+      // Search repeatedly while waiting; the original code only searched once.
+      async function searchForOpponent(){
+        if(cancelled||searching||!currentUser) return;
+        searching=true;
+        try{ await tryFindPvpMatch(); }
+        catch(e){ status.textContent='Đang kết nối... tiếp tục tìm người chơi'; }
+        finally{ searching=false; }
+      }
+      await searchForOpponent();
+      soloSearchTimer=setInterval(searchForOpponent,2500);
+    }catch(e){
+      status.textContent='Không thể kết nối phòng đấu.';
+      alert('Không thể vào phòng đấu: '+(e.message||e));
+      showScreen('lobby');
+    }
   })();
-  soloDotsTimer=setInterval(function(){ remaining=Math.max(0,remaining-1); dots=(dots+1)%4; el('mmDots').textContent=remaining+'s '+'.'.repeat(dots||1); },1000);
-  soloMatchTimer=setTimeout(function(){
-    clearInterval(soloDotsTimer); soloDotsTimer=null; soloMatchTimer=null;
-    if(!qref) return;
-    // Keep waiting for a real player after the 20s display; never create a bot.
-    el('mmDots').textContent='Đang chờ người chơi thật...';
-  },20000);
+  soloDotsTimer=setInterval(function(){
+    var secs=Math.floor((Date.now()-started)/1000);
+    dots=(dots+1)%4;
+    elapsed.textContent='Đã đợi: '+formatMMTime(secs)+' '+'.'.repeat(dots||1);
+    if(secs<20){
+      status.textContent='Đang tìm người chơi thật...';
+      estimate.textContent='Thời gian ước tính: khoảng 20–60 giây';
+    }else if(secs<60){
+      status.textContent='Chưa tìm thấy đối thủ — vẫn đang tìm người chơi thật';
+      estimate.textContent='Đã vượt thời gian chờ ban đầu; thời gian còn lại chưa xác định';
+    }else{
+      status.textContent='Hàng chờ vẫn hoạt động, đang tìm người chơi thật...';
+      estimate.textContent='Hiện chưa thể ước tính chính xác vì số người đang online thay đổi';
+    }
+  },1000);
+  soloMatchTimer=setTimeout(function(){ soloMatchTimer=null; },20000);
   el('cancelMM').onclick=function(){
-    cancelled=true; clearTimeout(soloMatchTimer); clearInterval(soloDotsTimer); soloMatchTimer=null; soloDotsTimer=null;
-    if(qref) FB.deleteDoc(qref).catch(function(){});
+    cancelled=true;
+    clearTimeout(soloMatchTimer); clearInterval(soloDotsTimer); clearInterval(soloSearchTimer);
+    soloMatchTimer=null; soloDotsTimer=null; soloSearchTimer=null;
+    if(soloQueueRef && FB) FB.deleteDoc(soloQueueRef).catch(function(){});
+    soloQueueRef=null; cleanupPvp();
     showScreen('lobby');
   };
 }
@@ -1535,6 +1678,7 @@ el('exitBtn').addEventListener('click', function(){
   el('pauseOverlay').classList.add('hidden'); refreshCoinBadges(); updateSoloBtnState(); showScreen('lobby'); playMusicPool(LOBBY_TRACKS);
 });
 el('retryBtn').addEventListener('click', function(){ if(state.mode==='solo') startSoloMatchmaking(); else startGame('normal'); });
+refreshAdRewardButtons();
 el('menuBtn').addEventListener('click', function(){
   state.running=false; cleanupPvp(); saveLocal(); if(currentUser) pushUserDoc();
   refreshCoinBadges(); updateSoloBtnState(); showScreen('lobby'); playMusicPool(LOBBY_TRACKS);
