@@ -440,51 +440,34 @@ window.dispatchEvent(new Event('pr-firebase-ready'));
 "use strict";
 
 /* ============================================================
-/* ============================================================
-/* ============================================================
-   MONETAG REWARDED SYSTEM (OPTIMIZED FOR Vercel / HTML5 Games)
-   ============================================================ */
-
-// 1. Thay đường link Direct Link của Monetag vào đây
-var MONETAG_DIRECT_LINK = 'https://5gvci.com/11944152'; 
-
-function showMoneyTagRewarded() {
-    return new Promise(function (resolve, reject) {
-        // Mở link ngay lập tức khi click để tránh trình duyệt chặn Pop-up
-        var adTab = window.open(MONETAG_DIRECT_LINK, '_blank');
-
-        if (!adTab) {
-            // Nếu vẫn bị chặn pop-up, chuyển hướng trực tiếp ở tab hiện tại
-            if (confirm("Vui lòng mở tab quảng cáo để nhận thưởng!")) {
-                window.location.href = MONETAG_DIRECT_LINK;
-            } else {
-                reject(new Error("Người dùng đã hủy xem quảng cáo."));
-                return;
-            }
-        }
-
-        // Tạo giao diện thông báo đếm ngược nhỏ trong Game
-        var countdown = 8; // Số giây chờ (nên để ngắn 5-8s)
-        
-        var overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:99999;font-family:sans-serif;font-size:18px;text-align:center;padding:20px;';
-        overlay.innerHTML = '<h3>Đang kiểm tra phần thưởng...</h3><p>Vui lòng xem tab quảng cáo vừa mở trong <b id="ad-timer" style="color:#ffcc00;font-size:24px;">' + countdown + '</b> giây.</p>';
-        document.body.appendChild(overlay);
-
-        var timer = setInterval(function () {
-            countdown--;
-            var timerEl = document.getElementById('ad-timer');
-            if (timerEl) timerEl.innerText = countdown;
-
-            if (countdown <= 0) {
-                clearInterval(timer);
-                if (document.body.contains(overlay)) {
-                    document.body.removeChild(overlay);
-                }
-                resolve(true); // Trả kết quả thành công để trao quà
-            }
-        }, 1000);
-    });
+   MONEYTAG ADS
+   The supplied MoneyTag file is a service-worker configuration.
+   Rewarded ads must be confirmed by the provider's SDK/callback;
+   never grant a reward merely because a timer elapsed.
+============================================================ */
+var MONEYTAG_DOMAIN='5gvci.com', MONEYTAG_ZONE=11944152;
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(e){ console.warn('MoneyTag SW registration failed',e); });
+  });
+}
+function showMoneyTagRewarded(kind){
+  return new Promise(function(resolve,reject){
+    var api = window.MoneyTag || window.Moneytag || window.moneytag || window.MoneyTagAds;
+    var fn = api && (api.showRewarded || api.showRewardedAd || api.rewarded || api.show);
+    if(typeof fn!=='function' && typeof window.showRewardedAd==='function') fn=window.showRewardedAd;
+    if(typeof fn!=='function'){
+      reject(new Error('MoneyTag rewarded-ad SDK/callback is not available.'));
+      return;
+    }
+    var done=false;
+    function success(){ if(done)return; done=true; resolve(true); }
+    function fail(e){ if(done)return; done=true; reject(e||new Error('Ad was not completed.')); }
+    try{
+      var result=fn.call(api,{zoneId:MONEYTAG_ZONE,zone:MONEYTAG_ZONE,type:kind,onReward:success,onComplete:success,onClose:function(){ if(!done) fail(new Error('Ad closed before reward.')); },onError:fail});
+      if(result && typeof result.then==='function') result.then(function(v){ if(v===false) fail(new Error('Ad was not completed.')); else success(); }).catch(fail);
+    }catch(e){ fail(e); }
+  });
 }
 
 // ============================================================
