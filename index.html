@@ -284,6 +284,7 @@
           <div class="stat" data-i18n-prefix="coinsGained">Coins gained: <b id="finalCoins">0</b></div>
           <div class="stat hidden" id="soloResultWrap">Opponent (<span id="botNameLbl"></span>): <b id="botFinalScore">0</b></div>
           <button class="btn small" id="reviveBtn" data-i18n="revive">REVIVE (100 🪙)</button>
+          <button class="btn small" id="adReviveBtn" style="background:var(--green); color:#0e1c0e; margin-top:5px;">🎬 HỒI SINH (XEM QC)</button>
           <button class="btn small" id="retryBtn" data-i18n="retry">RETRY</button>
           <button class="btn secondary small" id="menuBtn" data-i18n="menu">MENU</button>
         </div>
@@ -412,10 +413,6 @@ import {
   collection, query, orderBy, limit, getDocs, onSnapshot, runTransaction, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-/* ======================================================================
-   ⚠️ PASTE YOUR OWN FIREBASE CONFIG HERE (Firebase Console → Project settings)
-====================================================================== */
-/* Use the SAME config as index.html */
 const firebaseConfig = {
   apiKey: "AIzaSyAuHv472KR6ZP57RTK-d5z-aH0rK7lbDvQ",
   authDomain: "potato-run-ce6cd.firebaseapp.com",
@@ -530,8 +527,10 @@ document.addEventListener('click', function(e){
 ============================================================ */
 var DEFAULT_SAVE = { coins:0, owned:['classic'], equipped:'classic', highScore:0, muted:false };
 var store = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+window.store = store;
 try{ var raw = localStorage.getItem('potatorun_save_v4'); if(raw) store = Object.assign(store, JSON.parse(raw)); }catch(e){}
 function saveLocal(){ try{ localStorage.setItem('potatorun_save_v4', JSON.stringify(store)); }catch(e){} }
+window.saveLocal = saveLocal;
 window.addEventListener('beforeunload', function(){ saveLocal(); if(currentUser) pushUserDoc(); });
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden'){ saveLocal(); if(currentUser) pushUserDoc(); } });
 setInterval(function(){ saveLocal(); if(currentUser) pushUserDoc(); }, 5000);
@@ -544,7 +543,6 @@ function showScreen(id){
 /* ============================================================
    SKINS
 ============================================================ */
-/* ---- pixel-art potato: one shared 10x10 grid used by SVG (shop) and canvas (game/lobby) ---- */
 var POTATO_GRID = [
   "..........",
   "..........",
@@ -600,7 +598,10 @@ function potatoSVG(key,size){
   return '<svg viewBox="0 0 10 10" width="'+size+'" height="'+size+'" shape-rendering="crispEdges">'+rects+'</svg>';
 }
 function refreshCoinBadges(){ el('lobbyCoins').textContent = store.coins; el('skinsCoins').textContent = store.coins; }
+window.refreshCoinBadges = refreshCoinBadges;
+
 el('skinBtn').addEventListener('click', function(){
+  if (typeof window.trackMenuNavAd === 'function') window.trackMenuNavAd();
   refreshCoinBadges(); renderSkinGrid(); showScreen('skins');
 });
 el('backFromSkins').addEventListener('click', function(){ showScreen('lobby'); });
@@ -690,13 +691,12 @@ function playMusicPool(pool){
   }
   next();
 }
-/* three chill lobby tracks (rotate randomly) */
+
 var LOBBY_TRACKS=[
   { bpm:112, m:[392,0,440,494,0,440,392,0,523,0,494,440,0,392,349,0], b:[98,0,0,0,110,0,0,0,98,0,0,0,130,0,0,0], repeats:3 },
   { bpm:104, m:[440,0,523,0,494,0,440,0,392,0,440,494,0,440,392,0], b:[110,0,110,0,123,0,110,0,98,0,98,0,110,0,98,0], repeats:3 },
   { bpm:120, m:[349,0,392,440,0,392,349,0,330,0,349,392,0,330,294,0], b:[87,0,0,0,98,0,0,0,82,0,0,0,73,0,0,0], repeats:3 }
 ];
-/* three lively gameplay tracks (rotate randomly) */
 var GAME_TRACKS=[
   { bpm:150, m:[523,0,659,0,587,0,523,0,494,0,587,0,523,0,440,0], b:[131,0,131,0,147,0,147,0,123,0,123,0,110,0,110,0], d:[1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1], repeats:3 },
   { bpm:144, m:[440,0,523,0,494,0,440,0,392,0,494,0,440,0,349,0], b:[110,0,110,0,123,0,123,0,98,0,98,0,87,0,87,0], d:[1,0,1,0,1,0,0,1,1,0,1,0,1,0,0,1], repeats:3 },
@@ -745,7 +745,7 @@ function msUntilNextMidnightVN(){ var d=vnNow(); var next=new Date(d.getFullYear
 function formatCountdown(ms){ var h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return h+'h'+(m<10?'0':'')+m+'m'; }
 
 /* ============================================================
-   FIREBASE WIRING (with email verification requirement)
+   FIREBASE WIRING
 ============================================================ */
 var FB=null, currentUser=null, pendingUnverifiedUser=null;
 
@@ -815,13 +815,11 @@ el('recheckVerifyBtn').addEventListener('click', async function(){
   }catch(e){ alert(e.message); }
 });
 function wireAuth_recheck(){
-  // re-trigger the auth handler manually with the now-verified user
   var u = pendingUnverifiedUser; pendingUnverifiedUser = null;
-  FB.onAuthStateChanged(FB.auth, function(){}); // no-op safeguard
+  FB.onAuthStateChanged(FB.auth, function(){});
   location.reload();
 }
 
-/* ---- modals ---- */
 function openModal(id){ el(id).classList.add('show'); }
 function closeModal(id){ el(id).classList.remove('show'); }
 document.querySelectorAll('.modal-back').forEach(function(m){
@@ -901,6 +899,7 @@ function requireLogin(){
 ============================================================ */
 el('rankBtn').addEventListener('click', async function(){
   if(!requireLogin()) return;
+  if (typeof window.trackMenuNavAd === 'function') window.trackMenuNavAd();
   showScreen('leaderboard');
   el('lbResetHint').textContent = (LANG==='vi'?'⏳ BXH reset sau ':'⏳ Leaderboard resets in ')+formatWeeklyCountdown(msUntilNextWeeklyResetVN());
   var list = el('leaderboardList'); list.innerHTML = '...';
@@ -967,6 +966,7 @@ function renderMissions(){
 }
 el('missionBtn').addEventListener('click', async function(){
   if(!requireLogin()) return;
+  if (typeof window.trackMenuNavAd === 'function') window.trackMenuNavAd();
   el('missionResetHint').textContent = t('resetsAt') + formatCountdown(msUntilNextMidnightVN());
   el('missionList').innerHTML = '<li>'+t('noMissions')+'</li>';
   await loadMissions(); renderMissions(); showScreen('missions');
@@ -981,8 +981,6 @@ var W=0,H=0,GROUND=0;
 function resize(){
   var r=el('gameWrap').getBoundingClientRect();
   if(r.width<10||r.height<10) return;
-  // Render the scene on a slightly larger internal canvas so the browser scales it down,
-  // making the potato and obstacles feel smaller and easier to see at once.
   var RENDER_SCALE=1.10;
   W=canvas.width=Math.round(r.width*RENDER_SCALE); H=canvas.height=Math.round(r.height*RENDER_SCALE); GROUND=H*0.78;
   if(state&&state.player) state.player.y = Math.min(state.player.y, GROUND-state.player.h);
@@ -1093,6 +1091,7 @@ async function finalizePvpResult(){
   el('finalCoins').textContent=state.runCoins;
   el('overTitle').textContent=win?t('win'):t('lose');
   el('reviveBtn').classList.add('hidden');
+  if(el('adReviveBtn')) el('adReviveBtn').classList.add('hidden');
   el('overOverlay').classList.remove('hidden');
 }
 function startGame(mode, matchId){
@@ -1135,7 +1134,7 @@ function spawnCoin(){
 }
 function spawnMystery(){
   state.mysteries.push({ x:W+30, y:GROUND-80-Math.random()*20, w:30, h:30, bob:0 });
-  state.mysteryTimer=0; state.nextMystery = 620 + Math.random()*560; // rare
+  state.mysteryTimer=0; state.nextMystery = 620 + Math.random()*560;
 }
 function rectsOverlap(a,b){ return a.x<b.x+b.w-6 && a.x+a.w-6>b.x && a.y<b.y+b.h-4 && a.y+a.h-4>b.y; }
 
@@ -1155,7 +1154,6 @@ function applyLoot(kind, atX, atY){
   } else if(kind==='shield'){
     sShield();
     state.shieldActive = true; state.shieldTimer = 30*60;
-    // explode nearby obstacles & coins in close range
     var radius = 140;
     state.obstacles = state.obstacles.filter(function(o){
       var near = Math.abs(o.x-atX) < radius;
@@ -1271,19 +1269,17 @@ function update(){
   if(state.t % 20 === 0) renderBuffs();
 }
 
-/* ---- scenery: brighter classic-pixel daytime look ---- */
 function drawScenery(pctx, pW, pH, pGROUND, t, speed){
   var g = pctx.createLinearGradient(0,0,0,pGROUND);
   g.addColorStop(0,'#6ec2f2'); g.addColorStop(1,'#bfe8ff');
   pctx.fillStyle=g; pctx.fillRect(0,0,pW,pGROUND);
-  // pixel sun
+  
   var sunS = Math.max(16, pGROUND*0.14), sunX=pW-sunS*1.6, sunY=sunS*1.2;
   pctx.fillStyle='#ffe066';
   pctx.fillRect(sunX-sunS/2, sunY-sunS/2, sunS, sunS);
   pctx.fillRect(sunX-sunS/2-4, sunY-sunS/4, 4, sunS/2);
   pctx.fillRect(sunX+sunS/2, sunY-sunS/4, 4, sunS/2);
 
-  // blocky parallax hills, proportional height so they never overflow the sky
   var hillH = Math.max(20, pGROUND*0.22);
   var hillOff = (t*speed*0.12) % 220;
   pctx.fillStyle='#8fd67a';
@@ -1300,7 +1296,6 @@ function drawScenery(pctx, pW, pH, pGROUND, t, speed){
     pctx.fillRect(hx2, pGROUND-hillH*0.35, 180, hillH*0.35);
   }
 
-  // blocky clouds, positioned proportionally so they fit any canvas size
   var cloudOff = (t*speed*0.3) % 260;
   pctx.fillStyle='rgba(255,255,255,.92)';
   for(var c=-1;c<Math.ceil(pW/260)+1;c++){
@@ -1310,7 +1305,6 @@ function drawScenery(pctx, pW, pH, pGROUND, t, speed){
     pctx.fillRect(cx-6, cy+2, 46, 8);
   }
 
-  // ground: grass strip + dirt brick pattern (fixed tiling, no gaps/seams)
   pctx.fillStyle='#6bc24a'; pctx.fillRect(0,pGROUND,pW,10);
   pctx.fillStyle='#57ad3c'; var goff=(t*speed)%16;
   for(var gx=-16-goff; gx<pW; gx+=16){ pctx.fillRect(gx,pGROUND,8,4); }
@@ -1362,15 +1356,15 @@ function drawObstacles(){
       var flap = Math.sin(o.flap)>0 ? 1 : 0;
       var bx0=o.x, by0=o.y, bw=o.w/8, bh=o.h/6;
       ctx.fillStyle='#ff5b48';
-      ctx.fillRect(bx0+bw*2, by0, bw*4, bh); // head/body top
+      ctx.fillRect(bx0+bw*2, by0, bw*4, bh);
       ctx.fillRect(bx0+bw, by0+bh, bw*6, bh*3);
       ctx.fillRect(bx0+bw*2, by0+bh*4, bw*4, bh);
       ctx.fillStyle='#ffc23d';
-      ctx.fillRect(bx0+bw*6.5, by0+bh*1.5, bw*1.8, bh); // beak
-      ctx.fillStyle='#241a10'; ctx.fillRect(bx0+bw*2.4, by0+bh*1.2, bw*0.8, bh*0.8); // eye
+      ctx.fillRect(bx0+bw*6.5, by0+bh*1.5, bw*1.8, bh);
+      ctx.fillStyle='#241a10'; ctx.fillRect(bx0+bw*2.4, by0+bh*1.2, bw*0.8, bh*0.8);
       ctx.fillStyle='#c9402d';
-      if(flap){ ctx.fillRect(bx0, by0+bh*1.2, bw*1.6, bh*2); } // wing up
-      else{ ctx.fillRect(bx0+bw*0.6, by0+bh*2.4, bw*2, bh*1.6); } // wing down
+      if(flap){ ctx.fillRect(bx0, by0+bh*1.2, bw*1.6, bh*2); }
+      else{ ctx.fillRect(bx0+bw*0.6, by0+bh*2.4, bw*2, bh*1.6); }
     }
   });
 }
@@ -1401,7 +1395,7 @@ function loop(){
 }
 
 /* ============================================================
-   LOBBY PREVIEW — potato auto-plays in a small looping scene
+   LOBBY PREVIEW
 ============================================================ */
 var lobbyCanvas = el('lobbyPreview'), lobbyCtx = lobbyCanvas.getContext('2d');
 var lobbyPreviewRunning = false, lobbyRaf = null;
@@ -1433,7 +1427,6 @@ function lobbyPreviewStep(){
   lp.spawnTimer++; if(lp.spawnTimer>lp.nextSpawn) lpSpawnObstacle();
   for(var i=lp.obstacles.length-1;i>=0;i--){
     var o=lp.obstacles[i]; o.x -= lp.speed;
-    // auto-jump a little before reaching the obstacle
     if(p.onGround && o.x > p.x && o.x - p.x < 70 && o.x - p.x > 40){ p.vy=-12.4; p.onGround=false; }
     if(o.x < -40) lp.obstacles.splice(i,1);
   }
@@ -1470,6 +1463,10 @@ async function endRun(){
   saveLocal();
   el('finalScore').textContent=Math.floor(state.score);
   el('finalCoins').textContent=state.runCoins;
+
+  // Gọi đếm trận thua
+  if (typeof window.trackGameOverAd === 'function') window.trackGameOverAd();
+
   var title=t('gameOver');
   if(currentUser){
     missionProgress.plays = (missionProgress.plays||0)+1;
@@ -1482,6 +1479,7 @@ async function endRun(){
     el('botNameLbl').textContent=state.opponentName||'Player';
     el('botFinalScore').textContent=Math.floor(state.opponentScore||0);
     el('reviveBtn').classList.add('hidden');
+    if (el('adReviveBtn')) el('adReviveBtn').classList.add('hidden');
     el('overOverlay').classList.remove('hidden');
     if(state.opponentUid && state.opponentScore!==undefined && state.opponentAlive===false) await finalizePvpResult();
     return;
@@ -1489,14 +1487,28 @@ async function endRun(){
   el('overTitle').textContent=title;
   var reviveCost = REVIVE_BASE*Math.pow(5,state.reviveCount);
   var reviveBtn = el('reviveBtn');
+  var adReviveBtn = el('adReviveBtn');
+
   if(state.mode==='solo'){
     reviveBtn.classList.add('hidden');
-  }else if(state.reviveCount>=REVIVE_MAX){ reviveBtn.classList.add('hidden'); }
-  else{
+    if (adReviveBtn) adReviveBtn.classList.add('hidden');
+  } else if(state.reviveCount>=REVIVE_MAX){ 
+    reviveBtn.classList.add('hidden'); 
+  } else {
     reviveBtn.classList.remove('hidden');
     reviveBtn.textContent = (LANG==='vi'?'HỒI SINH (':'REVIVE (')+reviveCost+' 🪙)';
     reviveBtn.classList.toggle('locked', store.coins<reviveCost);
   }
+
+  // Quản lý hiển thị nút Hồi sinh qua QC
+  if (adReviveBtn) {
+    if (state.mode === 'normal' && !state.adReviveUsed) {
+      adReviveBtn.classList.remove('hidden');
+    } else {
+      adReviveBtn.classList.add('hidden');
+    }
+  }
+
   el('overOverlay').classList.remove('hidden');
 }
 
@@ -1508,13 +1520,25 @@ el('reviveBtn').addEventListener('click', function(){
   store.coins -= cost; saveLocal(); refreshCoinBadges();
   state.reviveCount++;
   state.lives = 1; state.invulnTimer=120;
-  // clear immediate danger ahead of the player
   state.obstacles = state.obstacles.filter(function(o){ return o.x > state.player.x + 260; });
   state.over=false; state.paused=false;
   el('overOverlay').classList.add('hidden');
   renderHearts(); renderBuffs();
   if(state.mode==='solo') playTrack(SOLO_TRACK.bpm, SOLO_TRACK.m, SOLO_TRACK.b, SOLO_TRACK.d);
   else playMusicPool(GAME_TRACKS);
+});
+
+// Sự kiện click nút Hồi sinh bằng Smartlink
+el('adReviveBtn').addEventListener('click', function(){
+  if(!state || !state.over || state.mode !== 'normal' || state.adReviveUsed) return;
+  state.adReviveUsed = true;
+  window.open('https://uplcm.com/4/11997925', '_blank');
+  state.lives = 1; state.invulnTimer = 120;
+  state.obstacles = state.obstacles.filter(function(o){ return o.x > state.player.x + 260; });
+  state.over = false; state.paused = false;
+  el('overOverlay').classList.add('hidden');
+  renderHearts(); renderBuffs();
+  playMusicPool(GAME_TRACKS);
 });
 
 el('playBtn').addEventListener('click', function(){ startGame('normal'); });
@@ -1543,7 +1567,6 @@ function startSoloMatchmaking(){
       soloQueueRef=qref;
       if(cancelled){ FB.deleteDoc(qref).catch(function(){}); return; }
       watchPvpQueue(qref);
-      // Search repeatedly while waiting; the original code only searched once.
       async function searchForOpponent(){
         if(cancelled||searching||!currentUser) return;
         searching=true;
