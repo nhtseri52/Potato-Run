@@ -66,7 +66,6 @@ function showVignetteAdDirect() {
 let coinAdCooldown = false;
 
 function initCoinAdButton() {
-    // Tạo nút "Xem QC +10 Coin" nằm cạnh nút SKIN SHOP ở Lobby
     const skinBtn = document.getElementById('skinBtn');
     if (skinBtn && !document.getElementById('coinAdBtn')) {
         const coinBtn = document.createElement('button');
@@ -76,7 +75,6 @@ function initCoinAdButton() {
         coinBtn.style.color = '#241a10';
         coinBtn.innerHTML = '🪙 +10 COIN (ADS)';
 
-        // Chèn ngay bên cạnh nút Skin Shop
         skinBtn.parentNode.insertBefore(coinBtn, skinBtn.nextSibling);
 
         coinBtn.addEventListener('click', () => {
