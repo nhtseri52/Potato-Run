@@ -1,0 +1,23 @@
+{
+  "name": "potato-run",
+  "version": "1.0.0",
+  "description": "Potato Run - free browser endless runner game",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"No tests configured\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nhtseri52/Potato-Run.git"
+  },
+  "keywords": ["game", "browser-game", "endless-runner"],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nhtseri52/Potato-Run/issues"
+  },
+  "homepage": "https://github.com/nhtseri52/Potato-Run#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
